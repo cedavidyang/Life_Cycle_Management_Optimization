@@ -21,9 +21,9 @@ from deap import tools
 #icorr_mean_list = np.array(input('corrosoin rate:')).astype('double')
 #year = np.array(input('expected life:')).astype('double')
 #num_processes = np.array(input('number of processes:')).astype('int')
-icorr_mean_list = [1.,1.,1.]
+icorr_mean_list = [1.,1.,0.5]
 year = 100
-num_processes = 3
+num_processes = 10
 
 creator.create("FitnessMulti", base.Fitness, weights=(-1.0,-1.0))
 creator.create("Individual", list, fitness=creator.FitnessMulti)
