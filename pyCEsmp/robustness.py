@@ -1,7 +1,7 @@
 # robustness related functions
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+#import matplotlib.pyplot as plt
+#import matplotlib.animation as animation
 
 #from scipy import optimize
 import scipy.stats as stats
@@ -152,33 +152,33 @@ def getInitialPeaks(r_array, nCompo, corrTarget=None, options=None):
         if options['disp'] is True:
             ## postprocessing
             data_gen = lambda: anneal_LHS(r_array, nCompo, corrTarget, options={'disp':True})
-            fig, ax = plt.subplots()
-            lines = ax.plot([], [], 'b', [], [], 'g', [], [], 'r')
-            t0 = initial_temperature(corrTarget)
-            ax.set_ylim(-0., t0*1.1)
-            ax.set_xlim(0, 2)
-            ax.grid()
-            xdata, y1data, y2data, y3data = [], [], [], []
-            def run(data):
-                # update the data
-                smpsBest, arrangeBest, corrBest, normBest, normParent, tempCurrent, iTotalIter = data
-                xdata.append(iTotalIter)
-                y1data.append(normParent)
-                y2data.append(normBest)
-                y3data.append(tempCurrent)
-                xmin, xmax = ax.get_xlim()
+            #fig, ax = plt.subplots()
+            #lines = ax.plot([], [], 'b', [], [], 'g', [], [], 'r')
+            #t0 = initial_temperature(corrTarget)
+            #ax.set_ylim(-0., t0*1.1)
+            #ax.set_xlim(0, 2)
+            #ax.grid()
+            #xdata, y1data, y2data, y3data = [], [], [], []
+            #def run(data):
+                ## update the data
+                #smpsBest, arrangeBest, corrBest, normBest, normParent, tempCurrent, iTotalIter = data
+                #xdata.append(iTotalIter)
+                #y1data.append(normParent)
+                #y2data.append(normBest)
+                #y3data.append(tempCurrent)
+                #xmin, xmax = ax.get_xlim()
 
-                if iTotalIter >= xmax:
-                    ax.set_xlim(xmin, 1.2*xmax)
-                    ax.figure.canvas.draw()
+                #if iTotalIter >= xmax:
+                    #ax.set_xlim(xmin, 1.2*xmax)
+                    #ax.figure.canvas.draw()
 
-                lines[0].set_data(xdata, y1data)
-                lines[1].set_data(xdata, y2data)
-                lines[2].set_data(xdata, y3data)
+                #lines[0].set_data(xdata, y1data)
+                #lines[1].set_data(xdata, y2data)
+                #lines[2].set_data(xdata, y3data)
 
-                return lines
-            ani = animation.FuncAnimation(fig, run, data_gen, repeat=False)
-            plt.show()
+                #return lines
+            #ani = animation.FuncAnimation(fig, run, data_gen, repeat=False)
+            #plt.show()
         res_generator = anneal_LHS(r_array, nCompo, corrTarget, options={'disp':False})
         for value in res_generator:
             res = value

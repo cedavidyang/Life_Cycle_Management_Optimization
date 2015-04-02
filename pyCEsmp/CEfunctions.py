@@ -2,8 +2,8 @@
 import os
 import numpy as np
 import scipy.stats as stats
-import matplotlib.pyplot as plt
-plt.ion()
+#import matplotlib.pyplot as plt
+#plt.ion()
 from scipy.optimize import curve_fit
 from scipy.interpolate import interp1d
 

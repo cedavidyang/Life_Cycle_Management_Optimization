@@ -10,8 +10,6 @@ from scipy.optimize import curve_fit
 import scipy.stats as stats
 from sklearn.mixture.gmm import GMM
 
-import matplotlib.pyplot as plt
-plt.ion()
 import time
 import datetime
 
@@ -220,6 +218,8 @@ def getLifetimeDistributionParameter(lifetime_name, time_array, pf_array, p0=Non
 
 if __name__ == '__main__':
     from scipy.special import gamma
+    import matplotlib.pyplot as plt
+    plt.ion()
     ## lower tail data
     #time_array = np.arange(10.,110,10.)
     #time_array = np.insert(time_array[time_array>0], 0, 1.)
