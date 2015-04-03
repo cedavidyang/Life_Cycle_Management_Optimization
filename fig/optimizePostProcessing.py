@@ -4,7 +4,7 @@ import sys
 import matplotlib.pyplot as plt
 from mpldatacursor import datacursor
 plt.rc('font', family='serif', size=12)
-plt.rc('text', usetex=False)
+plt.rc('text', usetex=True)
 #import matplotlib as mpl
 #mpl.use("pgf")
 #pgf_with_custom_preamble = {
@@ -48,12 +48,12 @@ def front(icorr_mean_list):
         front = popdata['front']
         frontfits = popdata['frontfits']
         pop = popdata['pop']
-        popfits = popfitsdata['popfits']
+        popfits = popdata['popfits']
 
     plt.ion()
 
     ##plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
-    for popfit in popfits:
+    for ind, popfit in zip(pop, popfits):
         plt.semilogx(popfit[0], popfit[1], 'b.',
                 label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(ind[0], ind[1], ind[2]))
 
@@ -153,3 +153,40 @@ def pfkeeping(icorr_mean_list):
     # change w/hspace
     plt.subplots_adjust(wspace=0.6, hspace=0.3)
     plt.subplots_adjust(left=0.10, right=0.95, top=0.95, bottom=0.08)
+
+
+def history(icorr_mean_list, str_yr_list):
+    # load data
+    suffix = rate2suffix(icorr_mean_list)
+    filename = 'pfhistory_str_'
+    for ti in str_yr:
+        filename = filename + str(int(ti)) + '_'
+    datapath = os.path.join(os.path.abspath('./'), 'data')
+    filename = filename+'_'+suffix+'.npz'
+    datafile = os.path.join(datapath,filename)
+
+    if os.path.isfile(datafile) is False:
+        print 'no data available, execute Life_Cycle_History.py with \
+                icorr_mean_list={} and str_yr_list={} fist'.format(icorr_mean_list,
+                        str_yr_list)
+        sys.exit(1)
+    else:
+        pfhistory = np.load(datafile)
+        time_array = pfhistory['time']
+        pf_sys = pfhistory['system']
+        pf_flex = pfhistory['flexure']
+        pf_shear = pfhistory['shear']
+        pf_deck = pfhistory['deck']
+
+    plt.ion()
+    plt.figure()
+    plt.semilogy(time_array, pf_flex, 'b--', label='flexure')
+    plt.semilogy(time_array, pf_shear, 'r.-', label='shear')
+    plt.semilogy(time_array, pf_deck, 'g-', label='deck')
+    plt.semilogy(time_array, pf_sys, 'ko-', label='system')
+
+    datacursor(formatter='{label}'.format,display='multiple', draggable=True,
+            bbox=None, fontsize=12,
+            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
+
+    pause = raw_input('press any key after annotation...')
