@@ -4,7 +4,7 @@ import sys
 import matplotlib.pyplot as plt
 from mpldatacursor import datacursor
 plt.rc('font', family='serif', size=12)
-plt.rc('text', usetex=False)
+plt.rc('text', usetex=True)
 #import matplotlib as mpl
 #mpl.use("pgf")
 #pgf_with_custom_preamble = {
@@ -48,12 +48,12 @@ def front(icorr_mean_list):
         front = popdata['front']
         frontfits = popdata['frontfits']
         pop = popdata['pop']
-        popfits = popfitsdata['popfits']
+        popfits = popdata['popfits']
 
     plt.ion()
 
     ##plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
-    for popfit in popfits:
+    for ind, popfit in zip(pop, popfits):
         plt.semilogx(popfit[0], popfit[1], 'b.',
                 label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(ind[0], ind[1], ind[2]))
 
