@@ -45,6 +45,9 @@ toolbox.register("mutate", tools.mutUniformInt,
 toolbox.register("select", tools.selNSGA2)
 toolbox.register("sort", tools.sortNondominated)
 
+npop = 300
+ngen = 30
+
 
 def main():
     # reset bookkeeping
@@ -76,9 +79,6 @@ def main():
 
     # optimization
     random.seed(64)
-
-    npop = 300
-    ngen = 30
 
     stats = tools.Statistics(key=lambda ind: ind.fitness.values)
     stats.register("avg", np.mean, axis=0)
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     datapath = os.path.join(os.path.abspath('./'), 'data')
     filename_list = ['pfkeeping_'+suffix+'.npz', 'costkeeping_'+suffix+'.npz',
             'popdata_'+suffix+'.npz']
-    datafile = []
+    datafiles = []
     for filename in filename_list:
         datafile = os.path.join(datapath,filename)
         datafiles.append(datafile)
