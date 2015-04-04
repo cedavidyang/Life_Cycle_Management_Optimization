@@ -69,7 +69,7 @@ if __name__ == '__main__':
     for ti in str_yr:
         filename = filename + str(int(ti)) + '_'
     datapath = os.path.join(os.path.abspath('./'), 'data')
-    filename = filename+'_'+suffix+'.npz'
+    filename = filename+suffix+'.npz'
     datafile = os.path.join(datapath,filename)
 
     np.savez(datafile, time=time_array, system=pfs[:,0], flexure=pfs[:,1],
