@@ -51,6 +51,7 @@ def front(icorr_mean_list):
         popfits = popdata['popfits']
 
     plt.ion()
+    plt.figure()
 
     ##plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
     for ind, popfit in zip(pop, popfits):
