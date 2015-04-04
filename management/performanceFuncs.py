@@ -133,8 +133,11 @@ def performanceHistory(str_yr_list, icorr_mean_list, year, register=False):
         # construct system and return if no strengthening plan
         system = System(virgin_component_list)
         pf_sys,pf_dict = system.accumulativePf(year, register)
+        total_cost = 0.0
     else:
+        # update pf and total_cost if having strengthening
         # strengthened component
+        cost_list = []
         component_list = []
         for comp_type,str_yr,icorr_mean in zip(comp_type_list, str_yr_list, icorr_mean_list):
             component = Component(comp_type, maintain_tag=False, str_yr=str_yr)
@@ -146,12 +149,8 @@ def performanceHistory(str_yr_list, icorr_mean_list, year, register=False):
             elif str_yr not in Component.costkeeping[comp_type][0,:] and\
                     str_yr in Component.pfkeeping[comp_type][0,:]:
                 resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
-                # register the cost
-                Component.registerCost(comp_type, str_yr, cost)
             else:
                 resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
-                # register the cost
-                Component.registerCost(comp_type, str_yr, cost)
                 # construc the list
                 component.setServiceTime(service_time)
                 component.setResistanceMean(resistance_mean)
