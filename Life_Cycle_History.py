@@ -11,8 +11,9 @@ import datetime
 from constants import END_AGE, RELIABILITY_DT, SERVICE_LIFE, FRP_DESIGN_YR
 from management.performanceFuncs import performanceHistory
 
-str_yr = [3, 27, 59]
+str_yr = [0, 0, 0]
 icorr_mean_list=[1,1,1]
+nprocess = 10
 
 def getPf(param_list):
     pf_list = performanceHistory(*param_list)
@@ -37,7 +38,7 @@ def main():
     start_delta_time = time.time()
 
     # calculate pfs
-    pool = Pool(processes=3)
+    pool = Pool(processes=nprocess)
     res = pool.map_async(getPf, iter_param).get(0xFFFF)
     pool.close()
     pool.join()
