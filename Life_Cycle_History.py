@@ -30,7 +30,6 @@ def main():
     time_array = np.unique(time_array)
     nTimePoint = time_array.shape[0]
 
-    import ipdb; ipdb.set_trace() # BREAKPOINT
     iter_param = itertools.izip(itertools.repeat(str_yr), itertools.repeat(icorr_mean_list),
             time_array, itertools.repeat(False))
 
