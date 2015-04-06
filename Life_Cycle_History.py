@@ -11,8 +11,8 @@ import datetime
 from constants import END_AGE, RELIABILITY_DT, SERVICE_LIFE, FRP_DESIGN_YR
 from management.performanceFuncs import performanceHistory
 
-str_yr = [52, 30, 29]
-icorr_mean_list=[1,1,1]
+str_yr = [0, 11, 10]
+icorr_mean_list=[1,1,0.5]
 nprocess = 10
 
 def getPf(param_list):
