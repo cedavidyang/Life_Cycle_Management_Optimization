@@ -185,10 +185,10 @@ def history(icorr_mean_list, str_yr_2dlist):
 
         plt.ion()
         plt.figure()
-        plt.semilogy(time_array, pf_flex, 'b--', label='flexure')
-        plt.semilogy(time_array, pf_shear, 'r.-', label='shear')
-        plt.semilogy(time_array, pf_deck, 'g-', label='deck')
-        plt.semilogy(time_array, pf_sys, 'ko-', label='system')
+        plt.semilogy(time_array, pf_flex, 'b', ls='--', label='flexure')
+        plt.semilogy(time_array, pf_shear, 'r', ls='-.', label='shear')
+        plt.semilogy(time_array, pf_deck, 'g', ls='-', label='deck and system')
+        plt.semilogy(time_array, pf_sys, 'ko', ls='-', label='deck and system')
 
     else:
         plt.ion()
@@ -223,3 +223,6 @@ def history(icorr_mean_list, str_yr_2dlist):
             arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
 
     pause = raw_input('press any key after annotation...')
+
+    plt.xlabel('time (year)', fontsize=12)
+    plt.ylabel('failure probability', fontsize=12)
