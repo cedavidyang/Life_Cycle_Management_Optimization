@@ -156,35 +156,67 @@ def pfkeeping(icorr_mean_list):
     plt.subplots_adjust(left=0.10, right=0.95, top=0.95, bottom=0.08)
 
 
-def history(icorr_mean_list, str_yr_list):
-    # load data
-    suffix = rate2suffix(icorr_mean_list)
-    filename = 'pfhistory_str_'
-    for ti in str_yr:
-        filename = filename + str(int(ti)) + '_'
-    datapath = os.path.join(os.path.abspath('./'), 'data')
-    filename = filename+'_'+suffix+'.npz'
-    datafile = os.path.join(datapath,filename)
+def history(icorr_mean_list, str_yr_2dlist):
+    if len(str_yr_2dlist) == 1:
+        # only one strengthening option is plotted, thus component pfs are
+        # added
 
-    if os.path.isfile(datafile) is False:
-        print 'no data available, execute Life_Cycle_History.py with \
-                icorr_mean_list={} and str_yr_list={} fist'.format(icorr_mean_list,
-                        str_yr_list)
-        sys.exit(1)
+        # load data
+        suffix = rate2suffix(icorr_mean_list)
+        filename = 'pfhistory_str_'
+        for ti in str_yr_2dlist[0]:
+            filename = filename + str(int(ti)) + '_'
+        datapath = os.path.join(os.path.abspath('./'), 'data')
+        filename = filename+suffix+'.npz'
+        datafile = os.path.join(datapath,filename)
+
+        if os.path.isfile(datafile) is False:
+            print 'no data available, execute Life_Cycle_History.py with \
+                    icorr_mean_list={} and str_yr_list={} fist'.format(icorr_mean_list,
+                            str_yr_list)
+            sys.exit(1)
+        else:
+            pfhistory = np.load(datafile)
+            time_array = pfhistory['time']
+            pf_sys = pfhistory['system']
+            pf_flex = pfhistory['flexure']
+            pf_shear = pfhistory['shear']
+            pf_deck = pfhistory['deck']
+
+        plt.ion()
+        plt.figure()
+        plt.semilogy(time_array, pf_flex, 'b--', label='flexure')
+        plt.semilogy(time_array, pf_shear, 'r.-', label='shear')
+        plt.semilogy(time_array, pf_deck, 'g-', label='deck')
+        plt.semilogy(time_array, pf_sys, 'ko-', label='system')
+
     else:
-        pfhistory = np.load(datafile)
-        time_array = pfhistory['time']
-        pf_sys = pfhistory['system']
-        pf_flex = pfhistory['flexure']
-        pf_shear = pfhistory['shear']
-        pf_deck = pfhistory['deck']
+        plt.ion()
+        plt.figure()
+        # multiple strengthening options, only system pfs are plotted
+        ls_list = ['-', '--', '-.', ':', '  ', ' ']
+        for str_yr_list,ls in zip(str_yr_2dlist, ls_list):
+            # load data
+            suffix = rate2suffix(icorr_mean_list)
+            filename = 'pfhistory_str_'
+            for ti in str_yr_list:
+                filename = filename + str(int(ti)) + '_'
+            datapath = os.path.join(os.path.abspath('./'), 'data')
+            filename = filename+suffix+'.npz'
+            datafile = os.path.join(datapath,filename)
 
-    plt.ion()
-    plt.figure()
-    plt.semilogy(time_array, pf_flex, 'b--', label='flexure')
-    plt.semilogy(time_array, pf_shear, 'r.-', label='shear')
-    plt.semilogy(time_array, pf_deck, 'g-', label='deck')
-    plt.semilogy(time_array, pf_sys, 'ko-', label='system')
+            if os.path.isfile(datafile) is False:
+                print 'no data available, execute Life_Cycle_History.py with \
+                        icorr_mean_list={} and str_yr_list={} fist'.format(icorr_mean_list,
+                                str_yr_list)
+                sys.exit(1)
+            else:
+                pfhistory = np.load(datafile)
+                time_array = pfhistory['time']
+                pf_sys = pfhistory['system']
+                plt.semilogy(time_array, pf_sys, ls=ls,
+                        label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(
+                            str_yr_list[0], str_yr_list[1], str_yr_list[2]))
 
     datacursor(formatter='{label}'.format,display='multiple', draggable=True,
             bbox=None, fontsize=12,
