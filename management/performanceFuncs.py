@@ -155,7 +155,6 @@ def pointintimeFunc(str_yr_list, icorr_mean_list=[1,1,1], year=100, register=Tru
                 # register the cost
                 Component.registerCost(comp_type, str_yr, cost)
             else:
-                print "LHS "+ str(str_yr) + ": "+comp_type
                 resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
                 # register the cost
                 Component.registerCost(comp_type, str_yr, cost)
