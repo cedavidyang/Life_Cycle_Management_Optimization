@@ -1,7 +1,15 @@
+
+import os
+strepath = os.path.join(os.path.expanduser('~'), 'FERUM')
+import sys
+sys.path.append(strepath)
+from pyStRe import *
+
 # component class
 import os
 import sys
 import numpy as np
+from scipy import stats
 
 from constants.beamConstants import FRP_DESIGN_YR, SERVICE_LIFE
 from constants.beamConstants import M_DCDW_MEAN, M_DCDW_COV, M_LLIM_MEAN, M_LLIM_COV
@@ -167,6 +175,43 @@ class Component(object):
 
             return self.ceSmp.pf
 
+    def pointintimePf(self, timepoint, register=True):
+        # resistance array
+        rmean = self.resistance_mean[self.service_time==timepoint][0]
+        rcov = self.resistance_cov[self.service_time==timepoint][0]
+        R = stats.lognorm(np.sqrt(np.log(1+rcov**2)), scale=rmean/np.sqrt(1+rcov**2))
+        # live load array
+        if 'f' in self.comp_type.lower():
+            mean=M_LLIM_MEAN/0.74
+            stdv=M_LLIM_MEAN/0.74*M_LLIM_COV
+        elif 's' in self.comp_type.lower():
+            mean=V_LLIM_MEAN/0.68
+            stdv=V_LLIM_MEAN/0.68*V_LLIM_COV
+        elif 'd' in self.comp_type.lower():
+            mean= M_LLIM_DECK_MEAN/0.74
+            stdv=M_LLIM_DECK_MEAN/0.74*M_LLIM_DECK_COV
+        loc=mean-np.sqrt(6)*stdv/np.pi*np.euler_gamma,
+        scale=np.sqrt(6)*stdv/np.pi
+        SL = stats.gumbel_r(loc=loc,scale=scale)
+        rvs = [R, SL]
+        corr = np.eye(2)
+        probdata = ProbData(names=['R','SL'], rvs=rvs, corr=corr, startpoint=[rmean, mean], nataf=False)
+        rvs = [R,SL]
+
+        def gf1(x, param=None):
+            return x[0]-x[1]
+        def dgdq1(x, param=None):
+            dgd1 = 1.
+            dgd2 = -1.
+            return [dgd1,dgd2]
+
+        analysisopt = AnalysisOpt(gradflag='DDM', recordu=False, recordx=False, flagsens=False, verbose=False)
+        gfunc = Gfunc(gf1, dgdq1)
+
+        formBeta = CompReliab(probdata, gfunc, analysisopt)
+        formresults = formBeta.form_result()
+        return formresults.pf1
+
 
 if __name__ == '__main__':
     import time
@@ -184,7 +229,8 @@ if __name__ == '__main__':
     test_component.loadDeterioration(shear_datafile)
     test_component.setCESampling(NUM_COMPONENT, NUM_ADAPTATION, NUM_PRE_SMP, NUM_MAIN_SMP)
     year = 100
-    pf = test_component.accumulativePf(year)
+    #pf = test_component.accumulativePf(year)
+    pf = test_component.pointintimePf(year)
     print 'failure probability at year {:d}: {:.4e}'.format(year, pf)
 
     delta_time = time.time() - start_delta_time
