@@ -22,7 +22,7 @@ plt.ion()
 plt.close('all')
 
 if __name__ == '__main__':
-    costkeeping = np.load('costkeeping.npz')
+    costkeeping = np.load('costkeeping_bbb.npz')
     plt.figure()
     plt.plot(costkeeping['flexure'][0,:], costkeeping['flexure'][1,:], 'bo',
             label='flexure cost')
