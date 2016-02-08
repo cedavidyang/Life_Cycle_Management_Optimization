@@ -22,7 +22,7 @@ plt.ion()
 plt.close('all')
 
 if __name__ == '__main__':
-    pfkeeping = np.load('pfkeeping.npz')
+    pfkeeping = np.load('pfkeeping_bbb.npz')
 
     fig = plt.figure()
     ax0 = plt.subplot2grid((2,4), (0,0), colspan=2)
