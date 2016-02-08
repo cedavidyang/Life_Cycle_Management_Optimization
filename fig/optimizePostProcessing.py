@@ -3,20 +3,27 @@ import os
 import sys
 import matplotlib.pyplot as plt
 from mpldatacursor import datacursor
-plt.rc('font', family='serif', size=12)
-plt.rc('text', usetex=True)
-#import matplotlib as mpl
+#plt.rc('font', family='serif', size=12)
+#plt.rc('text', usetex=True)
+import matplotlib as mpl
 #mpl.use("pgf")
-#pgf_with_custom_preamble = {
-    #"font.family": "serif", # use serif/main font for text elements
-    #"font.size": 12, # use font size
-    #"text.usetex": True,    # use inline math for ticks
+pgf_with_custom_preamble = {
+    "figure.figsize": [3.54, 2.655],
+    #"figure.subplot.bottom": 0.14,
+    #"figure.subplot.top": 0.93,
+    "font.family": "serif", # use serif/main font for text elements
+    "font.size": 9, # use font size
+    "text.usetex": True,    # use inline math for ticks
+    #'text.latex.unicode': True,
     #"pgf.rcfonts": False,   # don't setup fonts from rc parameters
     #"pgf.preamble": [
-        #"\\usepackage{siunitx}",         # load additional packages
+        #r'\usepackage{fontspec}',         # load additional packages
         #]
-#}
-#mpl.rcParams.update(pgf_with_custom_preamble)
+}
+mpl.rcParams.update(pgf_with_custom_preamble)
+import matplotlib.pyplot as plt
+from mpldatacursor import datacursor
+annotate_text = u'{label}'
 
 def rate2suffix(icorr_mean_list):
     suffix = ''
@@ -92,12 +99,12 @@ def costkeeping(icorr_mean_list):
 
     plt.ion()
     plt.figure()
-    plt.plot(costkeeping['flexure'][0,:], costkeeping['flexure'][1,:], 'bo',
-            label='flexure cost')
-    plt.plot(costkeeping['shear'][0,:], costkeeping['shear'][1,:], 'r^',
-            label='shear cost')
-    plt.plot(costkeeping['deck'][0,:], costkeeping['deck'][1,:], 'gv',
-            label='deck cost')
+    plt.plot(costkeeping['flexure'][0,:], costkeeping['flexure'][1,:], 'b-',
+            label='flexure')
+    plt.plot(costkeeping['shear'][0,:], costkeeping['shear'][1,:], 'r--',
+            label='shear')
+    plt.plot(costkeeping['deck'][0,:], costkeeping['deck'][1,:], 'g-.',
+            label='deck')
     service_life = np.max((np.max(costkeeping['flexure'][0,:]),
             np.max(costkeeping['shear'][0,:]), np.max(costkeeping['deck'][0,:])))
     max_cost = np.max((np.max(costkeeping['flexure'][1,:]),
@@ -105,14 +112,14 @@ def costkeeping(icorr_mean_list):
     plt.xlim((-1,service_life+1))
     plt.ylim((-1,max_cost*1.01))
 
-    plt.xlabel('strengthening time (year)', fontsize=12)
-    plt.ylabel('cost (mm\\textsuperscript{3})', fontsize=12)
+    plt.xlabel('Strengthening time (year)')
+    plt.ylabel('Cost (mm\\textsuperscript{3})')
 
     ax = plt.gca()
     ax.ticklabel_format(axis='y', style='sci', scilimits=(-3,3))
 
     datacursor(formatter='{label}'.format,display='multiple', draggable=True,
-            bbox=None, fontsize=12,
+            bbox=None, fontsize=9,
             arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
 
     pause = raw_input('press any key after annotation...')
@@ -141,15 +148,15 @@ def pfkeeping(icorr_mean_list):
     ax2.semilogy(pfkeeping['deck'][0,:], pfkeeping['deck'][1,:], 'bo')
 
     # labels
-    ax0.set_title('(a) flexure', fontsize=12)
-    ax0.set_xlabel('strengthening time (year)', fontsize=12)
-    ax0.set_ylabel('failure prob.', fontsize=12)
-    ax1.set_title('(b) shear', fontsize=12)
-    ax1.set_xlabel('strengthening time (year)', fontsize=12)
-    ax1.set_ylabel('failure prob.', fontsize=12)
-    ax2.set_title('(c) deck', fontsize=12)
-    ax2.set_xlabel('strengthening time (year)', fontsize=12)
-    ax2.set_ylabel('failure prob.', fontsize=12)
+    ax0.set_title('(a) Flexure', fontsize=12)
+    ax0.set_xlabel('Strengthening time (year)', fontsize=12)
+    ax0.set_ylabel('Failure prob.', fontsize=12)
+    ax1.set_title('(b) Shear', fontsize=12)
+    ax1.set_xlabel('Strengthening time (year)', fontsize=12)
+    ax1.set_ylabel('Failure prob.', fontsize=12)
+    ax2.set_title('(c) Deck', fontsize=12)
+    ax2.set_xlabel('Strengthening time (year)', fontsize=12)
+    ax2.set_ylabel('Failure prob.', fontsize=12)
 
     # change w/hspace
     plt.subplots_adjust(wspace=0.6, hspace=0.3)
@@ -214,15 +221,18 @@ def history(icorr_mean_list, str_yr_2dlist):
                 pfhistory = np.load(datafile)
                 time_array = pfhistory['time']
                 pf_sys = pfhistory['system']
+                ## journal
+                #plt.semilogy(time_array, pf_sys, ls=ls,
+                        #label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(
+                            #str_yr_list[0], str_yr_list[1], str_yr_list[2]))
+                # conference
                 plt.semilogy(time_array, pf_sys, ls=ls,
-                        label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(
+                        label=u'({:d},{:d},{:d})'.format(
                             str_yr_list[0], str_yr_list[1], str_yr_list[2]))
 
+    plt.xlabel('Time (year)')
+    plt.ylabel('Failure probability')
+
     datacursor(formatter='{label}'.format,display='multiple', draggable=True,
-            bbox=None, fontsize=12,
+            bbox=None, fontsize=9,
             arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
-
-    pause = raw_input('press any key after annotation...')
-
-    plt.xlabel('time (year)', fontsize=12)
-    plt.ylabel('failure probability', fontsize=12)
