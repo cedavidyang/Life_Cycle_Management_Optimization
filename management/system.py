@@ -52,6 +52,41 @@ class System(object):
 
         return sys_pf, pf_dict
 
+    def pointintimePf(self, timepoint, register=True):
+        pf_dict = {}
+        for component,virgin_component in zip(self.component_list, self.virgin_component_list):
+            str_yr = component.str_yr
+            comp_type = component.comp_type
+            if str_yr in Component.pfkeeping[comp_type][0,:]:
+                indx = np.where(Component.pfkeeping[comp_type][0,:]==str_yr)[0][0]
+                pf_dict[component.comp_type] = Component.pfkeeping[comp_type][1,indx]
+            elif component.maintain_tag == False or str_yr>=timepoint:
+                pf_dict[comp_type] = virgin_component.pointintimePf(timepoint, register=False)
+                if register == True:
+                    tmp = np.array([[str_yr], [pf_dict[comp_type]]])
+                    Component.pfkeeping[comp_type] = np.hstack((Component.pfkeeping[comp_type], tmp))
+            else:
+                pf2 = component.pointintimePf(timepoint-str_yr, register=False)
+                pf1 = virgin_component.pointintimePf(str_yr, register=False)
+                pf = np.minimum(pf2, pf1)
+                pf_dict[component.comp_type] = pf
+                # write survival to bookkeeping
+                if register == True:
+                    tmp = np.array([[str_yr], [pf]])
+                    Component.pfkeeping[comp_type] = np.hstack((Component.pfkeeping[comp_type], tmp))
+
+        flex_survivor = 1-pf_dict['flexure']
+        shear_survivor = 1-pf_dict['shear']
+        beam_survivor = flex_survivor * shear_survivor
+        beam_fail = 1 - beam_survivor
+        deck_survivor = 1-pf_dict['deck']
+
+        sys_survivor = deck_survivor * (beam_survivor**3 + beam_survivor**3*beam_fail
+            + beam_survivor**2*beam_fail + beam_survivor**3*beam_fail + beam_survivor**3*beam_fail**2)
+        sys_pf = 1-sys_survivor
+
+        return sys_pf, pf_dict
+
 
 if __name__ == '__main__':
     import time
