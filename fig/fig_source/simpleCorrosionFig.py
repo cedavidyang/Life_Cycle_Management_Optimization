@@ -1,9 +1,26 @@
 # post processing of simple corrosion results
 
 import numpy as np
+import matplotlib as mpl
+#mpl.use("pgf")
+pgf_with_custom_preamble = {
+    "figure.figsize": [3.54, 2.655],
+    #"figure.subplot.bottom": 0.14,
+    #"figure.subplot.top": 0.93,
+    "font.family": "serif", # use serif/main font for text elements
+    "font.size": 9, # use font size
+    "text.usetex": True,    # use inline math for ticks
+    #'text.latex.unicode': True,
+    #"pgf.rcfonts": False,   # don't setup fonts from rc parameters
+    #"pgf.preamble": [
+        #r'\usepackage{fontspec}',         # load additional packages
+        #]
+}
+mpl.rcParams.update(pgf_with_custom_preamble)
 import matplotlib.pyplot as plt
 plt.ion()
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from mpldatacursor import datacursor
 
 from corrosion.simpleCorrosion import *
 from pyre.distributions import Lognormal
@@ -194,23 +211,37 @@ def main(component_type, service_time, icorr_mean, str_yr=None):
     return ti1_smp, np.array(resistance_smp), np.array(resistance_mean), np.array(resistance_cov)
 
 if __name__ == '__main__':
-    # Structural age
+    # flexural data
     service_time = np.arange(START_AGE+TIME_INTERVAL,END_AGE+TIME_INTERVAL,TIME_INTERVAL)
-    ti1_smp, resistance_rc, resistance_mean, resistance_cov = main('shear', service_time, 1)
-    dummy, resistance_frp, dummy, dummy = main('shear', service_time, 1, 30)
+    flex_ti1_smp, resistance_rc, flex_mean, flex_cov = main('flexure', service_time, 1)
+    dummy, resistance_frp, dummy, dummy = main('flexure', service_time, 1, 30)
+    # shear data
+    shear_ti1_smp, dummy, shear_mean, shear_cov = main('shear', service_time, 1)
+    # deck data
+    deck_ti1_smp, dummy, deck_mean, deck_cov = main('deck', service_time, 1)
 
     plt.close('all')
-    plt.rc('font', family='serif', size=12)
+    #plt.rc('font', family='serif', size=12)
     num_bins = 100
 
     # corrosion initiation
     plt.figure()
-    plt.hist(ti1_smp, bins=num_bins, range=range(ti1_smp, 0,100),
-            normed=True, color='blue', histtype='step')
-    plt.xlabel('time (year)')
+    plt.hist(flex_ti1_smp, bins=num_bins, # range=range(flex_ti1_smp, 0,100),
+            normed=True, color='blue', histtype='step', label='flexure')
+    plt.hist(shear_ti1_smp, bins=num_bins, # range=range(shear_ti1_smp, 0,100),
+            normed=True, color='red', histtype='step', label='shear')
+    plt.hist(deck_ti1_smp, bins=num_bins, # range=range(deck_ti1_smp, 0,100),
+            normed=True, color='green', histtype='step', label='deck')
+    plt.xlim((0, 60))
+    plt.xlabel('Time (year)')
     plt.ylabel('PDF')
+    annotate_text = u'{label}'
+    datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
+            bbox=None, fontsize=9,
+            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
 
     # resistance histogram
+    num_bins = 20
     plt.figure()
     resistance_rc_mean = np.mean(resistance_rc[0])
     resistance_rc_std = np.std(resistance_rc[0])
@@ -219,9 +250,9 @@ if __name__ == '__main__':
     resistance_frp_std = np.std(resistance_frp[0])
     lognormal_frp = Lognormal('frp', resistance_frp_mean, resistance_frp_std).rv
     plt.hist(resistance_rc[0], bins=num_bins, color='blue', facecolor='none',
-            ls='solid', histtype='step', normed=True)
+            ls='solid', normed=True)
     plt.hist(resistance_frp[0], bins=num_bins, color='red', facecolor='none',
-            ls='dashed', histtype='step', normed=True)
+            ls='dashed', normed=True)
     plt.ylim((0,0.002))
     ax = plt.gca()
     ax.annotate('initial strength', xy=(1981, 5.e-4), xytext=(2387, 7.29e-4),
@@ -232,28 +263,37 @@ if __name__ == '__main__':
     xticks = np.linspace(xlims[0], xlims[1], 500)
     plt.plot(xticks, lognormal_rc.pdf(xticks), 'b')
     plt.plot(xticks, lognormal_frp.pdf(xticks), 'r')
-    plt.xlabel('flexural strength of bridge girders (kN-m)')
+    plt.xlabel('Flexural strength of bridge girders (kN-m)')
     plt.ylabel('PDF')
 
     # resistance history
     f, (ax1, ax2) = plt.subplots(2, sharex=True)
     # MC reults
-    ax1.plot(service_time, resistance_mean, 'b-', label='mean (LHS)' )
-    ax2.plot(service_time, resistance_cov, 'b--', label='COV (LHS)' )
+    ax1.plot(service_time, flex_mean[1:]/flex_mean[0], 'b-', label='flexure' )
+    ax1.plot(service_time, shear_mean[1:]/shear_mean[0], 'r-', label='shear' )
+    ax1.plot(service_time, deck_mean[1:]/deck_mean[0], 'g-', label='deck' )
+    ax2.plot(service_time, flex_cov[1:], 'b--', label='flexure' )
+    ax2.plot(service_time, shear_cov[1:], 'r--', label='shear' )
+    ax2.plot(service_time, deck_cov[1:], 'g--', label='deck' )
     # figure settings
-    ax2.set_xlabel('time (year)')
+    ax2.set_xlabel('Time (year)')
     #ax1.set_ylabel('strengh mean (kN-m)')
     #ax2.set_ylabel('strength COV')
+    f.text(0.03, 0.5, r'Normalized resistance', ha='center', va='center', rotation='vertical')
+    ax1.annotate('mean values', xy=(5, 0.8), bbox=dict(boxstyle="round", fc="w"))
+    ax2.annotate('coefficient of variation', xy=(5, 0.145), bbox=dict(boxstyle="round", fc="w"))
     #majorFormatter = FormatStrFormatter('%.2e')
     #ax1.yaxis.set_major_formatter(majorFormatter)
     #ax2.yaxis.set_major_formatter(majorFormatter)
-    f.text(0.03, 0.5, r'flexural strength', ha='center', va='center', rotation='vertical')
-    ax1.annotate('mean (kN-m)', xy=(50.8, 1578), xytext=(19, 1521),
-            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k', shrinkB=0))
-    ax2.annotate('COV', xy=(50.4, 0.136), xytext=(20, 0.1369),
-            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k', shrinkB=0))
+    #ax1.annotate('mean (kN-m)', xy=(50.8, 1578), xytext=(19, 1521),
+            #arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k', shrinkB=0))
+    #ax2.annotate('COV', xy=(50.4, 0.136), xytext=(20, 0.1369),
+            #arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k', shrinkB=0))
     #ax1.legend(loc='lower left', prop={'size':12})
     #ax2.legend(loc='lower right', prop={'size':12})
+    datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
+            bbox=None, fontsize=9,
+            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
 
 
-    plt.show()
+    #plt.show()
