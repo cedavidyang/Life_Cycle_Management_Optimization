@@ -1,8 +1,7 @@
-
-import os
-strepath = os.path.join(os.path.expanduser('~'), 'FERUM')
-import sys
-sys.path.append(strepath)
+#import os
+#strepath = os.path.join(os.path.expanduser('~'), 'FERUM')
+#import sys
+#sys.path.append(strepath)
 from pyStRe import *
 
 # component class
