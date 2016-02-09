@@ -68,7 +68,7 @@ class System(object):
             else:
                 pf2 = component.pointintimePf(timepoint-str_yr, register=False)
                 pf1 = virgin_component.pointintimePf(str_yr, register=False)
-                pf = np.minimum(pf2, pf1)
+                pf = np.maximum(pf2, pf1)
                 pf_dict[component.comp_type] = pf
                 # write survival to bookkeeping
                 if register == True:
