@@ -49,7 +49,8 @@ NPOP = 500
 # stop criteria
 NGEN = 10
 NMAX = 200
-TOL = 0.01
+TOL1 = 0.01
+TOL2 = 100
 NCR = 10
 
 
@@ -85,7 +86,7 @@ def main():
     random.seed(64)
 
     logbook = tools.Logbook()
-    logbook.header = ["gen", "evals", "nfront", "mean", "tol"]
+    logbook.header = ["gen", "evals", "nfront", "mean1", "mean2", "tol1", "tol2"]
 
     pop = toolbox.population(n=NPOP)
     fits = toolbox.map(toolbox.evaluate, pop)
@@ -112,28 +113,55 @@ def main():
         front = toolbox.sort(offspring+pop, k=NPOP, first_front_only=True)[0]
         halloffame.update(front)
 
+        ## check if stop evolution
+        #distance=[]
+        #frontfit = [ind.fitness.values for ind in halloffame]
+        #for obj in frontfit:
+            #vector = np.array(frontfitlast)-np.array(obj)
+            #distance.append(min(np.linalg.norm(vector, axis=1)))
+        #distances.append(np.mean(distance))
+        #longest = 0.
+        #distances.append(np.mean(distance))
+        #vertlongest = 0.
+        #horilongest = 0.
+        #for point1 in frontfit:
+            #for point2 in frontfit:
+                ##dist = np.linalg.norm(np.array(point1)-np.array(point2))
+                #if dist > longest:
+                    #longest = dist
+        #tol = longest/NPOP
+        #tol = np.maximum(tol, TOL)
+        #evolStop = (len(distances)>NGEN and all(np.array(distances[-NGEN:])<tol)) or g>NMAX
+        #frontfitlast = frontfit
         # check if stop evolution
-        distance=[]
+        distance1=[]
+        distance2=[]
         frontfit = [ind.fitness.values for ind in halloffame]
         for obj in frontfit:
-            vector = np.array(frontfitlast)-np.array(obj)
-            distance.append(min(np.linalg.norm(vector, axis=1)))
-        distances.append(np.mean(distance))
-        longest = 0.
+            distance1.append(np.abs(np.log10(frontfitlast[0])-np.log10(obj[0])))
+            distance2.append(np.abs(frontfitlast[1]-obj[1]))
+        distances1.append(np.mean(distance1))
+        distances2.append(np.mean(distance2))
+        longest1 = 0.
+        longest2 = 0.
         for point1 in frontfit:
             for point2 in frontfit:
-                dist = np.linalg.norm(np.array(point1)-np.array(point2))
-                if dist > longest:
-                    longest = dist
-        tol = longest/NPOP
-        tol = np.maximum(tol, TOL)
-        evolStop = (len(distances)>NGEN and all(np.array(distances[-NGEN:])<tol)) or g>NMAX
+                dist1 = np.abs(np.log10(point1[0])-np.log10(point2[0]))
+                dist2 = np.abs(point1[1]-point2[1])
+                if dist1 > longest1:
+                    longest1 = dist1
+                if dist2 > longest2:
+                    longest2 = dist2
+        tol1 = np.maximum(longest1/NPOP,TOL1)
+        tol2 = np.maximum(longest2/NPOP,TOL2)
+        evolStop = (len(distances)>NGEN and all(np.array(distances1[-NGEN:])<tol1)
+            and all(np.array(distances2[-NGEN:])<tol2)) or g>NMAX
         frontfitlast = frontfit
 
         # Gather all the fitnesses in one list and print the stats
-        record = stats.compile(pop)
+        #record = stats.compile(pop)
         logbook.record(gen=g, evals=nevals,nfront=len(halloffame),
-                mean=distances[-1], tol=tol, **stats.compile(pop))
+                mean1=distances1[-1], mean2=distances2[-1], tol1=tol1, tol2=tol2)
         print(logbook.stream)
 
         g+=1
@@ -174,7 +202,7 @@ if __name__ == "__main__":
     cost_deck = cost_deck[:,indx]
 
     allfits = [ind.fitness.values for ind in allpop]
-    frontfits = [ind.fitness.values for ind in front_parallel[0]]
+    frontfits = [ind.fitness.values for ind in front_parallel]
     pop = allpop[-NPOP:]
     popfits = [ind.fitness.values for ind in pop]
 
