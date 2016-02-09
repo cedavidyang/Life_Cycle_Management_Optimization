@@ -136,18 +136,20 @@ def main():
         # check if stop evolution
         distance1=[]
         distance2=[]
-        frontfit = [ind.fitness.values for ind in halloffame]
+        frontfit = np.array([ind.fitness.values for ind in halloffame])
         for obj in frontfit:
-            distance1.append(np.abs(np.log10(frontfitlast[0])-np.log10(obj[0])))
-            distance2.append(np.abs(frontfitlast[1]-obj[1]))
+            #vector = np.array(frontfitlast)-np.array(obj)
+            #distance.append(min(np.linalg.norm(vector, axis=1)))
+            distance1.append(min(np.abs(np.log10(frontfitlast[:,0])-np.log10(obj[0,0]))))
+            distance2.append(min(np.abs(np.log10(frontfitlast[:,1])-np.log10(obj[0,1]))))
         distances1.append(np.mean(distance1))
         distances2.append(np.mean(distance2))
         longest1 = 0.
         longest2 = 0.
         for point1 in frontfit:
             for point2 in frontfit:
-                dist1 = np.abs(np.log10(point1[0])-np.log10(point2[0]))
-                dist2 = np.abs(point1[1]-point2[1])
+                dist1 = np.abs(np.log10(point1[0,0])-np.log10(point2[0,0]))
+                dist2 = np.abs(point1[0,1]-point2[0,1])
                 if dist1 > longest1:
                     longest1 = dist1
                 if dist2 > longest2:
