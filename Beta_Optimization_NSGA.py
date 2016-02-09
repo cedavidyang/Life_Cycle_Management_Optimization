@@ -45,8 +45,12 @@ toolbox.register("mutate", tools.mutUniformInt,
 toolbox.register("select", tools.selNSGA2)
 toolbox.register("sort", tools.sortNondominated)
 
-NPOP = 300
-NGEN = 30
+NPOP = 500
+# stop criteria
+NGEN = 10
+NMAX = 200
+TOL = 0.01
+NCR = 10
 
 
 def main():
