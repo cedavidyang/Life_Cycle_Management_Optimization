@@ -96,7 +96,8 @@ def main():
     nevals = NPOP
 
     g = 1
-    distances = []
+    distances1 = []
+    distances2 = []
     frontfitlast = np.zeros((1,2))
     nevalsum = 0
     evolStop = False
@@ -140,23 +141,23 @@ def main():
         for obj in frontfit:
             #vector = np.array(frontfitlast)-np.array(obj)
             #distance.append(min(np.linalg.norm(vector, axis=1)))
-            distance1.append(min(np.abs(np.log10(frontfitlast[:,0])-np.log10(obj[0,0]))))
-            distance2.append(min(np.abs(np.log10(frontfitlast[:,1])-np.log10(obj[0,1]))))
+            distance1.append(min(np.abs(np.log10(frontfitlast[:,0])-np.log10(obj[0]))))
+            distance2.append(min(np.abs(np.log10(frontfitlast[:,1])-np.log10(obj[1]))))
         distances1.append(np.mean(distance1))
         distances2.append(np.mean(distance2))
         longest1 = 0.
         longest2 = 0.
         for point1 in frontfit:
             for point2 in frontfit:
-                dist1 = np.abs(np.log10(point1[0,0])-np.log10(point2[0,0]))
-                dist2 = np.abs(point1[0,1]-point2[0,1])
+                dist1 = np.abs(np.log10(point1[0])-np.log10(point2[0]))
+                dist2 = np.abs(point1[1]-point2[1])
                 if dist1 > longest1:
                     longest1 = dist1
                 if dist2 > longest2:
                     longest2 = dist2
         tol1 = np.maximum(longest1/NPOP,TOL1)
         tol2 = np.maximum(longest2/NPOP,TOL2)
-        evolStop = (len(distances)>NGEN and all(np.array(distances1[-NGEN:])<tol1)
+        evolStop = (len(distances1)>NGEN and all(np.array(distances1[-NGEN:])<tol1)
             and all(np.array(distances2[-NGEN:])<tol2)) or g>NMAX
         frontfitlast = frontfit
 
