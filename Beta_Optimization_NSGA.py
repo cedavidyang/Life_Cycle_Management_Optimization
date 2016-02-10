@@ -98,7 +98,7 @@ def main():
     g = 1
     distances1 = []
     distances2 = []
-    frontfitlast = np.array([1., 0.])
+    frontfitlast = np.array([[1., 0.]])
     nevalsum = 0
     evolStop = False
     halloffame = tools.ParetoFront()
