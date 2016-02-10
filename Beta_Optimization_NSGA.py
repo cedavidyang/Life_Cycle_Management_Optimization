@@ -98,7 +98,7 @@ def main():
     g = 1
     distances1 = []
     distances2 = []
-    frontfitlast = np.zeros((1,2))
+    frontfitlast = np.array([1., 0.])
     nevalsum = 0
     evolStop = False
     halloffame = tools.ParetoFront()
@@ -142,7 +142,7 @@ def main():
             #vector = np.array(frontfitlast)-np.array(obj)
             #distance.append(min(np.linalg.norm(vector, axis=1)))
             distance1.append(min(np.abs(np.log10(frontfitlast[:,0])-np.log10(obj[0]))))
-            distance2.append(min(np.abs(np.log10(frontfitlast[:,1])-np.log10(obj[1]))))
+            distance2.append(min(np.abs(frontfitlast[:,1]-obj[1])))
         distances1.append(np.mean(distance1))
         distances2.append(np.mean(distance2))
         longest1 = 0.
