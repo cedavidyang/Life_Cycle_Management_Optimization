@@ -20,10 +20,10 @@ from deap import tools
 
 
 NPARAM = 3
-INRTLMAX = 1.0
-INRTLMIN = 0.4
-PCONF = 2.0
-SCONF = 2.0
+INRTLMAX = 0.5
+INRTLMIN = 0.5
+PCONF = 1.5
+SCONF = 1.5
 PMIN = 0.0
 PMAX = 100.0
 SMIN = -0.2
@@ -54,7 +54,7 @@ creator.create("Swarm", list, gbest=None, gbestfit=list)
 def init_particle(pcls, size, pmin, pmax, smin, smax, geoinfo):
     part = pcls(random.randint(pmin, pmax) for _ in xrange(size))
     spacing = pmax-pmin
-    part.speed = [random.randint(smin*spacing, smax*spacing) for _ in xrange(size)]
+    part.speed = [random.uniform(smin*spacing, smax*spacing) for _ in xrange(size)]
     part.pmin = pmin
     part.pmax = pmax
     part.smin = smin
