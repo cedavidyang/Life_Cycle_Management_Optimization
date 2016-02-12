@@ -234,6 +234,11 @@ def main():
     pool = Pool(processes=num_processes)
     toolbox.register("map", pool.map)
 
+    #Component.pfkeeping = dict(Component.pfkeeping)
+    #Component.costkeeping = dict(Component.costkeeping)
+    #Component.riskkeeping = dict(Component.riskkeeping)
+    #toolbox.register("map", map)
+
     print "MULTIOBJECTIVE OPTIMIZATION: parallel version"
     start_delta_time = time.time()
 
