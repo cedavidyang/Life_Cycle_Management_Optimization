@@ -74,9 +74,6 @@ class System(object):
                     indx = np.where(Component.pfkeeping[comp_type][0,:]==t)[0][0]
                     pf_dict[component.comp_type] = Component.pfkeeping[comp_type][1,indx]
                 else:
-                    if component.service_time is None:
-                        import ipdb; ipdb.set_trace() # BREAKPOINT
-                        pass
                     pf_dict[component.comp_type] = component.pointintimePf(t-component.str_yr)
                     # write survival to bookkeeping
                     if register == True:
@@ -88,9 +85,6 @@ class System(object):
                     indx = np.where(Component.pfkeeping['virgin'+comp_type][0,:]==t)[0][0]
                     pf_dict[component.comp_type] = Component.pfkeeping['virgin'+comp_type][1,indx]
                 else:
-                    if component.service_time is None:
-                        import ipdb; ipdb.set_trace() # BREAKPOINT
-                        pass
                     pf_dict[component.comp_type] = component.pointintimePf(t)
                     # write survival to bookkeeping
                     if register == True:
