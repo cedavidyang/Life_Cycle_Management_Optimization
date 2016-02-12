@@ -30,7 +30,7 @@ SMIN = -0.2
 SMAX = 0.2
 NREP = 500
 NDIV = 50
-NPOP = 500
+NPOP = 50
 # stop criteria
 NGEN = 10
 NMAX = 200
@@ -226,18 +226,18 @@ def main():
     #Component.costkeeping['shear'] = costkeeping['shear']
     #Component.costkeeping['deck'] = costkeeping['deck']
 
-    manager = Manager()
-    Component.pfkeeping = manager.dict(Component.pfkeeping)
-    Component.costkeeping = manager.dict(Component.costkeeping)
-    Component.riskkeeping = manager.dict(Component.riskkeeping)
+    #manager = Manager()
+    #Component.pfkeeping = manager.dict(Component.pfkeeping)
+    #Component.costkeeping = manager.dict(Component.costkeeping)
+    #Component.riskkeeping = manager.dict(Component.riskkeeping)
 
-    pool = Pool(processes=num_processes)
-    toolbox.register("map", pool.map)
+    #pool = Pool(processes=num_processes)
+    #toolbox.register("map", pool.map)
 
-    #Component.pfkeeping = dict(Component.pfkeeping)
-    #Component.costkeeping = dict(Component.costkeeping)
-    #Component.riskkeeping = dict(Component.riskkeeping)
-    #toolbox.register("map", map)
+    Component.pfkeeping = dict(Component.pfkeeping)
+    Component.costkeeping = dict(Component.costkeeping)
+    Component.riskkeeping = dict(Component.riskkeeping)
+    toolbox.register("map", map)
 
     print "MULTIOBJECTIVE OPTIMIZATION: parallel version"
     start_delta_time = time.time()
