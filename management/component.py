@@ -27,21 +27,26 @@ from preprocessing import getCorrosionLossFromFile, getDeteriorationFromFile,\
 class Component(object):
 
     pfkeeping = {'flexure':-1.*np.ones((2,1)), 'shear':-1.*np.ones((2,1)),
-        'deck':-1.*np.ones((2,1))}
+        'deck':-1.*np.ones((2,1)), 'virginflexure':-1.*np.ones((2,1)),
+        'virginshear':-1.*np.ones((2,1)), 'virgindeck':-1.*np.ones((2,1))}
     riskkeeping = {'flexure':-1.*np.ones((2,1)), 'shear':-1.*np.ones((2,1)),
-        'deck':-1.*np.ones((2,1))}
+        'deck':-1.*np.ones((2,1)), 'virginflexure':-1.*np.ones((2,1)),
+        'virginshear':-1.*np.ones((2,1)), 'virgindeck':-1.*np.ones((2,1))}
     costkeeping = {'flexure':-1.*np.ones((2,1)), 'shear':-1.*np.ones((2,1)),
-        'deck':-1.*np.ones((2,1))}
+        'deck':-1.*np.ones((2,1)), 'virginflexure':-1.*np.ones((2,1)),
+        'virginshear':-1.*np.ones((2,1)), 'virgindeck':-1.*np.ones((2,1))}
 
     @classmethod
     def resetPfKeeping(cls):
         cls.pfkeeping = {'flexure':-1.*np.ones((2,1)), 'shear':-1.*np.ones((2,1)),
-        'deck':-1.*np.ones((2,1))}
+                'deck':-1.*np.ones((2,1)), 'virginflexure':-1.*np.ones((2,1)),
+                'virginshear':-1.*np.ones((2,1)), 'virgindeck':-1.*np.ones((2,1))}
 
     @classmethod
     def resetRiskKeeping(cls):
         cls.riskkeeping = {'flexure':-1.*np.ones((2,1)), 'shear':-1.*np.ones((2,1)),
-            'deck':-1.*np.ones((2,1))}
+                'deck':-1.*np.ones((2,1)), 'virginflexure':-1.*np.ones((2,1)),
+                'virginshear':-1.*np.ones((2,1)), 'virgindeck':-1.*np.ones((2,1))}
 
     @classmethod
     def registerCost(cls, comp_type, str_yr, cost):
@@ -52,7 +57,8 @@ class Component(object):
     @classmethod
     def resetCostKeeping(cls):
         cls.costkeeping = {'flexure':-1.*np.ones((2,1)), 'shear':-1.*np.ones((2,1)),
-            'deck':-1.*np.ones((2,1))}
+                'deck':-1.*np.ones((2,1)), 'virginflexure':-1.*np.ones((2,1)),
+                'virginshear':-1.*np.ones((2,1)), 'virgindeck':-1.*np.ones((2,1))}
 
     def __init__(self, comp_type, maintain_tag=None, str_yr=None):
         self.comp_type = comp_type
@@ -176,8 +182,12 @@ class Component(object):
 
     def pointintimePf(self, timepoint, register=True):
         # resistance array
-        rmean = self.resistance_mean[self.service_time==timepoint][0]
-        rcov = self.resistance_cov[self.service_time==timepoint][0]
+        if timepoint == 0:
+            rmean = self.resistance_mean[0]
+            rcov = self.resistance_cov[0]
+        else:
+            rmean = self.resistance_mean[self.service_time==timepoint][0]
+            rcov = self.resistance_cov[self.service_time==timepoint][0]
         R = stats.lognorm(np.sqrt(np.log(1+rcov**2)), scale=rmean/np.sqrt(1+rcov**2))
         # live load array
         if 'f' in self.comp_type.lower():
