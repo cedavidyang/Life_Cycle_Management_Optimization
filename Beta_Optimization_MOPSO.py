@@ -28,7 +28,7 @@ PMIN = 0.0
 PMAX = 100.0
 SMIN = -0.2
 SMAX = 0.2
-NREP = 200
+NREP = 500
 NDIV = 50
 NPOP = 500
 # stop criteria
