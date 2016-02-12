@@ -54,38 +54,57 @@ class System(object):
 
     def pointintimePf(self, timepoint, register=True):
         pf_dict = {}
-        for component,virgin_component in zip(self.component_list, self.virgin_component_list):
-            str_yr = component.str_yr
-            comp_type = component.comp_type
-            if str_yr in Component.pfkeeping[comp_type][0,:]:
-                indx = np.where(Component.pfkeeping[comp_type][0,:]==str_yr)[0][0]
-                pf_dict[component.comp_type] = Component.pfkeeping[comp_type][1,indx]
-            elif component.maintain_tag == False or str_yr>=timepoint:
-                pf_dict[comp_type] = virgin_component.pointintimePf(timepoint, register=False)
-                if register == True:
-                    tmp = np.array([[str_yr], [pf_dict[comp_type]]])
-                    Component.pfkeeping[comp_type] = np.hstack((Component.pfkeeping[comp_type], tmp))
-            else:
-                pf2 = component.pointintimePf(timepoint-str_yr, register=False)
-                pf1 = virgin_component.pointintimePf(str_yr, register=False)
-                pf = np.maximum(pf2, pf1)
-                pf_dict[component.comp_type] = pf
-                # write survival to bookkeeping
-                if register == True:
-                    tmp = np.array([[str_yr], [pf]])
-                    Component.pfkeeping[comp_type] = np.hstack((Component.pfkeeping[comp_type], tmp))
+        #str_yr_array = np.zeros((len(self.component_list),1), dtype=int)
+        str_yr_list = []
+        pf_dummy = 0.
+        for i,component in enumerate(self.component_list):
+            str_yr_list.append(component.str_yr)
+        #str_yr_list.append(timepoint)
+        str_yr_array = np.array(str_yr_list)
 
-        flex_survivor = 1-pf_dict['flexure']
-        shear_survivor = 1-pf_dict['shear']
-        beam_survivor = flex_survivor * shear_survivor
-        beam_fail = 1 - beam_survivor
-        deck_survivor = 1-pf_dict['deck']
+        nstr = str_yr_array.size
+        syspf_list = []
+        for i,t in enumerate(np.append(str_yr_array,timepoint)):
+            frpindx = str_yr_array<t
+            components = np.array(self.component_list)[frpindx]
+            virgin_components = np.array(self.virgin_component_list)[np.logical_not(frpindx)]
+            for component in components:
+                comp_type = component.comp_type
+                if t in Component.pfkeeping[comp_type][0,:]:
+                    indx = np.where(Component.pfkeeping[comp_type][0,:]==t)[0][0]
+                    pf_dict[component.comp_type] = Component.pfkeeping[comp_type][1,indx]
+                else:
+                    pf_dict[component.comp_type] = component.pointintimePf(t-component.str_yr)
+                    # write survival to bookkeeping
+                    if register == True:
+                        tmp = np.array([[t], [pf_dict[component.comp_type]]])
+                        Component.pfkeeping[comp_type] = np.hstack((Component.pfkeeping[comp_type], tmp))
+            for component in virgin_components:
+                comp_type = component.comp_type
+                if t in Component.pfkeeping['virgin'+comp_type][0,:]:
+                    indx = np.where(Component.pfkeeping['virgin'+comp_type][0,:]==t)[0][0]
+                    pf_dict[component.comp_type] = Component.pfkeeping['virgin'+comp_type][1,indx]
+                else:
+                    pf_dict[component.comp_type] = component.pointintimePf(t)
+                    # write survival to bookkeeping
+                    if register == True:
+                        tmp = np.array([[t], [pf_dict[component.comp_type]]])
+                        Component.pfkeeping['virgin'+comp_type] = np.hstack((Component.pfkeeping['virgin'+comp_type], tmp))
 
-        sys_survivor = deck_survivor * (beam_survivor**3 + beam_survivor**3*beam_fail
-            + beam_survivor**2*beam_fail + beam_survivor**3*beam_fail + beam_survivor**3*beam_fail**2)
-        sys_pf = 1-sys_survivor
+            flex_survivor = 1-pf_dict['flexure']
+            shear_survivor = 1-pf_dict['shear']
+            beam_survivor = flex_survivor * shear_survivor
+            beam_fail = 1 - beam_survivor
+            deck_survivor = 1-pf_dict['deck']
 
-        return sys_pf, pf_dict
+            sys_survivor = deck_survivor * (beam_survivor**3 + beam_survivor**3*beam_fail
+                + beam_survivor**2*beam_fail + beam_survivor**3*beam_fail + beam_survivor**3*beam_fail**2)
+            sys_pf = 1-sys_survivor
+            syspf_list.append(sys_pf)
+
+        sys_pf_max = np.max(syspf_list)
+
+        return sys_pf_max, pf_dict
 
 
 if __name__ == '__main__':
