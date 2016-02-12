@@ -88,10 +88,15 @@ def performanceFunc(str_yr_list, icorr_mean_list=[1,1,1], year=100, register=Tru
             # cost and pf
             if str_yr in Component.costkeeping[comp_type][0,:] and\
                     str_yr in Component.pfkeeping[comp_type][0,:]:
+                # no need to get mean and cov of resistance since pf is in
+                # bookkeeping database
                 indx = np.where(Component.costkeeping[comp_type][0,:]==str_yr)[0][0]
                 cost = Component.costkeeping[comp_type][1,indx]
             elif str_yr not in Component.costkeeping[comp_type][0,:] and\
                     str_yr in Component.pfkeeping[comp_type][0,:]:
+                # no need to set service_time and resistance since pf in
+                # bookkeeping database
+                # calculate resistance and cost
                 resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
                 # register the cost
                 Component.registerCost(comp_type, str_yr, cost)
@@ -147,13 +152,22 @@ def pointintimeFunc(str_yr_list, icorr_mean_list=[1,1,1], year=100, register=Tru
             # cost and pf
             if str_yr in Component.costkeeping[comp_type][0,:] and\
                     str_yr in Component.pfkeeping[comp_type][0,:]:
+                # bookkeeping database
                 indx = np.where(Component.costkeeping[comp_type][0,:]==str_yr)[0][0]
                 cost = Component.costkeeping[comp_type][1,indx]
+                # construc the list
+                component.setServiceTime(service_time)
+                component.setResistanceMean(resistance_mean)
+                component.setResistanceCov(resistance_cov)
             elif str_yr not in Component.costkeeping[comp_type][0,:] and\
                     str_yr in Component.pfkeeping[comp_type][0,:]:
                 resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
                 # register the cost
                 Component.registerCost(comp_type, str_yr, cost)
+                # construc the list
+                component.setServiceTime(service_time)
+                component.setResistanceMean(resistance_mean)
+                component.setResistanceCov(resistance_cov)
             else:
                 resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
                 # register the cost
