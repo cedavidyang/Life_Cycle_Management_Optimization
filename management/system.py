@@ -6,6 +6,15 @@ import numpy as np
 from component import Component
 
 class System(object):
+    bookkeeping = {}
+
+    @classmethod
+    def resetBookKeeping(cls):
+        cls.bookkeeping = {}
+
+    @classmethod
+    def registerCost(cls, str_yr_list, pf, cost):
+        cls.bookkeeping[str_yr_list] = [pf,cost]
 
     def __init__(self, virgin_component_list, component_list=None):
         self.virgin_component_list = virgin_component_list
@@ -54,42 +63,23 @@ class System(object):
 
     def pointintimePf(self, timepoint, register=True):
         pf_dict = {}
-        #str_yr_array = np.zeros((len(self.component_list),1), dtype=int)
         str_yr_list = []
         pf_dummy = 0.
         for i,component in enumerate(self.component_list):
             str_yr_list.append(component.str_yr)
-        #str_yr_list.append(timepoint)
-        str_yr_array = np.array(str_yr_list)
 
-        nstr = str_yr_array.size
+        str_yr_array = np.array(str_yr_list)
         syspf_list = []
-        for i,t in enumerate(np.append(str_yr_array,timepoint)):
+        for i,t in enumerate(np.append(str_yr_list,timepoint)):
             frpindx = str_yr_array<t
             components = np.array(self.component_list)[frpindx]
             virgin_components = np.array(self.virgin_component_list)[np.logical_not(frpindx)]
             for component in components:
                 comp_type = component.comp_type
-                if t in Component.pfkeeping[comp_type][0,:]:
-                    indx = np.where(Component.pfkeeping[comp_type][0,:]==t)[0][0]
-                    pf_dict[component.comp_type] = Component.pfkeeping[comp_type][1,indx]
-                else:
-                    pf_dict[component.comp_type] = component.pointintimePf(t-component.str_yr)
-                    # write survival to bookkeeping
-                    if register == True:
-                        tmp = np.array([[t], [pf_dict[component.comp_type]]])
-                        Component.pfkeeping[comp_type] = np.hstack((Component.pfkeeping[comp_type], tmp))
+                pf_dict[component.comp_type] = component.pointintimePf(t-component.str_yr)
             for component in virgin_components:
                 comp_type = component.comp_type
-                if t in Component.pfkeeping['virgin'+comp_type][0,:]:
-                    indx = np.where(Component.pfkeeping['virgin'+comp_type][0,:]==t)[0][0]
-                    pf_dict[component.comp_type] = Component.pfkeeping['virgin'+comp_type][1,indx]
-                else:
-                    pf_dict[component.comp_type] = component.pointintimePf(t)
-                    # write survival to bookkeeping
-                    if register == True:
-                        tmp = np.array([[t], [pf_dict[component.comp_type]]])
-                        Component.pfkeeping['virgin'+comp_type] = np.hstack((Component.pfkeeping['virgin'+comp_type], tmp))
+                pf_dict[component.comp_type] = component.pointintimePf(t)
 
             flex_survivor = 1-pf_dict['flexure']
             shear_survivor = 1-pf_dict['shear']
