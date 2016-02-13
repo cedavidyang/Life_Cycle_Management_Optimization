@@ -1,17 +1,20 @@
 import os
 import sys
+import itertools
+import math
+import operator
+import random
 import numpy as np
 from multiprocessing import Pool, Manager
 
 import time
 import datetime
 
-import random
-
 from constants import END_AGE, RELIABILITY_DT, SERVICE_LIFE, FRP_DESIGN_YR
 from constants.simpleCorrosionConstants import START_AGE, TIME_INTERVAL, END_AGE
 from management.performanceFuncs import pointintimeFunc
 from management.component import Component
+from management.system import System
 
 from deap import algorithms
 from deap import base
@@ -56,28 +59,19 @@ NCR = 10
 
 def main():
     # reset bookkeeping
-    Component.resetCostKeeping()
-    Component.resetPfKeeping()
-    Component.resetRiskKeeping()
+    System.resetBookKeeping()
 
-    ## use existing pf data
-    #pfkeeping = np.load('pfkeeping.npz')
-    #Component.pfkeeping['flexure'] = pfkeeping['flexure']
-    #Component.pfkeeping['shear'] = pfkeeping['shear']
-    #Component.pfkeeping['deck'] = pfkeeping['deck']
-    ## use existing cost data
-    #costkeeping = np.load('costkeeping.npz')
-    #Component.costkeeping['flexure'] = costkeeping['flexure']
-    #Component.costkeeping['shear'] = costkeeping['shear']
-    #Component.costkeeping['deck'] = costkeeping['deck']
+    ## use existing bookkeeping data
+    #bookkeeping = np.load('bookkeeping.npz')
 
-    manager = Manager()
-    Component.pfkeeping = manager.dict(Component.pfkeeping)
-    Component.costkeeping = manager.dict(Component.costkeeping)
-    Component.riskkeeping = manager.dict(Component.riskkeeping)
+    #manager = Manager()
+    #System.bookkeeping = manager.dict(System.bookkeeping)
 
-    pool = Pool(processes=num_processes)
-    toolbox.register("map", pool.map)
+    #pool = Pool(processes=num_processes)
+    #toolbox.register("map", pool.map)
+
+    System.bookkeeping = dict(System.bookkeeping)
+    toolbox.register("map", map)
 
     print "MULTIOBJECTIVE OPTIMIZATION: parallel version"
     start_delta_time = time.time()
@@ -183,27 +177,6 @@ if __name__ == "__main__":
     allpop, log, halloffame, nevalsum = main()
     front_parallel = halloffame
 
-    # sort pfbooking
-    pf_flex = Component.pfkeeping['flexure']
-    indx = np.argsort(pf_flex[0])
-    pf_flex = pf_flex[:,indx]
-    pf_shear = Component.pfkeeping['shear']
-    indx = np.argsort(pf_shear[0])
-    pf_shear = pf_shear[:,indx]
-    pf_deck = Component.pfkeeping['deck']
-    indx = np.argsort(pf_deck[0])
-    pf_deck = pf_deck[:,indx]
-    # save costbooking
-    cost_flex = Component.costkeeping['flexure']
-    indx = np.argsort(cost_flex[0])
-    cost_flex = cost_flex[:,indx]
-    cost_shear = Component.costkeeping['shear']
-    indx = np.argsort(cost_shear[0])
-    cost_shear = cost_shear[:,indx]
-    cost_deck = Component.costkeeping['deck']
-    indx = np.argsort(cost_deck[0])
-    cost_deck = cost_deck[:,indx]
-
     allfits = [ind.fitness.values for ind in allpop]
     frontfits = [ind.fitness.values for ind in front_parallel]
     pop = allpop[-NPOP:]
@@ -224,14 +197,11 @@ if __name__ == "__main__":
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
-    filename_list = ['pfkeeping_'+suffix+'.npz', 'costkeeping_'+suffix+'.npz',
-            'popdata_'+suffix+'.npz']
+    filename_list = ['popdata_'+suffix+'.npz']
     datafiles = []
     for filename in filename_list:
         datafile = os.path.join(datapath,filename)
         datafiles.append(datafile)
 
-    np.savez(datafiles[0], flexure=pf_flex, shear=pf_shear, deck=pf_deck)
-    np.savez(datafiles[1], flexure=cost_flex, shear=cost_shear, deck=cost_deck)
-    np.savez(datafiles[2], allpop=allpop, allfits=allfits, front=front_parallel,
+    np.savez(datafiles[-1], allpop=allpop, allfits=allfits, front=front_parallel,
             frontfits=frontfits, pop=pop, popfits=popfits)
