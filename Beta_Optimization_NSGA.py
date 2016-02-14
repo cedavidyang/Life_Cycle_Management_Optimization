@@ -64,14 +64,14 @@ def main():
     ## use existing bookkeeping data
     #bookkeeping = np.load('bookkeeping.npz')
 
-    #manager = Manager()
-    #System.bookkeeping = manager.dict(System.bookkeeping)
+    manager = Manager()
+    System.bookkeeping = manager.dict(System.bookkeeping)
 
-    #pool = Pool(processes=num_processes)
-    #toolbox.register("map", pool.map)
+    pool = Pool(processes=num_processes)
+    toolbox.register("map", pool.map)
 
-    System.bookkeeping = dict(System.bookkeeping)
-    toolbox.register("map", map)
+    #System.bookkeeping = dict(System.bookkeeping)
+    #toolbox.register("map", map)
 
     print "MULTIOBJECTIVE OPTIMIZATION: parallel version"
     start_delta_time = time.time()
