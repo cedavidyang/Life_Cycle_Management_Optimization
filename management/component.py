@@ -188,6 +188,14 @@ class Component(object):
         else:
             rmean = self.resistance_mean[self.service_time==timepoint][0]
             rcov = self.resistance_cov[self.service_time==timepoint][0]
+        if 'f' in self.comp_type:
+            sd = M_DCDW_MEAN
+        elif 's' in self.comp_type:
+            sd = V_DCDW_MEAN
+        elif 'd' in self.comp_type:
+            sd = M_DCDW_DECK_MEAN
+        rstd = rmean*rcov
+        rmean = rmean-sd
         R = stats.lognorm(np.sqrt(np.log(1+rcov**2)), scale=rmean/np.sqrt(1+rcov**2))
         # live load array
         if 'f' in self.comp_type.lower():
