@@ -197,11 +197,12 @@ if __name__ == "__main__":
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
-    filename_list = ['popdata_'+suffix+'.npz']
+    filename_list = ['bookkeeping_'+suffix+'.npz', 'popdata_'+suffix+'.npz']
     datafiles = []
     for filename in filename_list:
         datafile = os.path.join(datapath,filename)
         datafiles.append(datafile)
 
-    np.savez(datafiles[-1], allpop=allpop, allfits=allfits, front=front_parallel,
+    np.savez(datafiles[0], bookkeeping=System.bookkeeping)
+    np.savez(datafiles[1], allpop=allpop, allfits=allfits, front=front_parallel,
             frontfits=frontfits, pop=pop, popfits=popfits)
