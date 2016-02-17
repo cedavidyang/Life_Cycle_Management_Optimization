@@ -56,17 +56,23 @@ def performanceFunc(str_yr_list, icorr_mean_list=[1,1,1], year=100, register=Tru
     # construct virgin component
     no_str_list = [0, 0, 0]
     virgin_component_list = []
-    for comp_type,str_yr,icorr_mean in zip(comp_type_list, no_str_list, icorr_mean_list):
+    for comp_type,str_yr,icorr_mean,str_yr2 in zip(comp_type_list, no_str_list, icorr_mean_list, str_yr_list):
         virgin_component = Component(comp_type, maintain_tag=False, str_yr=str_yr)
-        resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
-        #if str_yr not in Component.costkeeping[comp_type][0,:]:
-        #    # register the cost
-        #    Component.registerCost(comp_type, str_yr, cost)
-        # construc the list
-        virgin_component.setServiceTime(service_time)
-        virgin_component.setResistanceMean(resistance_mean)
-        virgin_component.setResistanceCov(resistance_cov)
-        virgin_component.setCESampling(NUM_COMPONENT, NUM_ADAPTATION, NUM_PRE_SMP, NUM_MAIN_SMP)
+        if str_yr in Component.costkeeping[comp_type][0,:] and\
+            str_yr in Component.pfkeeping[comp_type][0,:] and\
+                str_yr2 in Component.costkeeping[comp_type][0,:] and\
+                   str_yr2 in Component.pfkeeping[comp_type][0,:]:
+                    pass
+        else:
+            resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
+            #if str_yr not in Component.costkeeping[comp_type][0,:]:
+            #    # register the cost
+            #    Component.registerCost(comp_type, str_yr, cost)
+            # construc the list
+            virgin_component.setServiceTime(service_time)
+            virgin_component.setResistanceMean(resistance_mean)
+            virgin_component.setResistanceCov(resistance_cov)
+            virgin_component.setCESampling(NUM_COMPONENT, NUM_ADAPTATION, NUM_PRE_SMP, NUM_MAIN_SMP)
         virgin_component_list.append(virgin_component)
 
     if str_yr_list == no_str_list:
