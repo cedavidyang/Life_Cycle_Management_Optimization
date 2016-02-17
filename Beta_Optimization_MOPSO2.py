@@ -1,5 +1,3 @@
-import os
-import sys
 import itertools
 import math
 import operator
@@ -10,13 +8,11 @@ from multiprocessing import Pool, Manager
 import time
 import datetime
 
-import random
-
 from constants import END_AGE, RELIABILITY_DT, SERVICE_LIFE, FRP_DESIGN_YR
 from constants.simpleCorrosionConstants import START_AGE, TIME_INTERVAL, END_AGE
-from management.performanceFuncs import performanceFunc, evalFitness
+from management.performanceFuncs import pointintimeFunc
 from management.component import Component
-from fig.optimizePostProcessing import rate2suffix
+from management.system import System
 
 from deap import algorithms
 from deap import base
@@ -30,7 +26,7 @@ INRTLMIN = 0.8
 PCONF = 1.5
 SCONF = 1.5
 PMIN = 0.0
-PMAX = 99.0
+PMAX = 100.0
 SMIN = -0.2
 SMAX = 0.2
 NREP = 500
@@ -46,7 +42,7 @@ NCR = 10
 #icorr_mean_list = np.array(input('corrosoin rate:')).astype('double')
 #year = np.array(input('expected life:')).astype('double')
 #num_processes = np.array(input('number of processes:')).astype('int')
-icorr_mean_list = [1.,1.,1.]
+icorr_mean_list = [1.,1.,0.5]
 year = 100
 num_processes = 40
 
@@ -66,6 +62,9 @@ def init_particle(pcls, size, pmin, pmax, smin, smax, geoinfo):
     part.smax = smax
     part.geoinfo = geoinfo
     return part
+
+def set_geoinfo(part, indx, subindx):
+    part.geoinfo = (indx,subindx)
 
 def update_particle(part, best, w, phi1, phi2):
     tmpu1 = random.uniform(0,phi1)
@@ -136,7 +135,7 @@ toolbox.register("particle", init_particle, creator.Particle, size=NPARAM, pmin=
         smin=SMIN, smax=SMAX, geoinfo=None)
 toolbox.register("swarm", tools.initRepeat, creator.Swarm, toolbox.particle)
 toolbox.register("update", update_particle, phi1=PCONF, phi2=SCONF)
-toolbox.register("evaluate", performanceFunc, icorr_mean_list=icorr_mean_list, year=year)
+toolbox.register("evaluate", pointintimeFunc, icorr_mean_list=icorr_mean_list, year=year)
 toolbox.register("sort", tools.sortNondominated)
 toolbox.register("assign_crowding_dist", tools.emo.assignCrowdingDist)
 toolbox.register("select_leader", select_leader)
@@ -144,45 +143,26 @@ toolbox.register("unique_rows", unique_rows, return_index=False, return_inverse=
 
 
 def main():
-    ## reset bookkeeping
-    #Component.resetCostKeeping()
-    #Component.resetPfKeeping()
-    #Component.resetRiskKeeping()
+    # reset bookkeeping
+    System.resetBookKeeping()
 
-    # use existing pf data
-    suffix = rate2suffix(icorr_mean_list)
-    pfname = 'pfkeeping_'+suffix+'.npz'
-    costname = 'costkeeping_'+suffix+'.npz'
-    datapath = os.path.join(os.path.abspath('./'), 'data')
-    pffile = os.path.join(datapath,pfname)
-    costfile = os.path.join(datapath,costname)
-    pfkeeping = np.load(pffile)
-    Component.pfkeeping['flexure'] = pfkeeping['flexure']
-    Component.pfkeeping['shear'] = pfkeeping['shear']
-    Component.pfkeeping['deck'] = pfkeeping['deck']
-    # use existing cost data
-    costkeeping = np.load(costfile)
-    Component.costkeeping['flexure'] = costkeeping['flexure']
-    Component.costkeeping['shear'] = costkeeping['shear']
-    Component.costkeeping['deck'] = costkeeping['deck']
+    ## use existing bookkeeping data
+    #bookkeeping = np.load('bookkeeping.npz')
 
-    #manager = Manager()
-    #Component.pfkeeping = manager.dict(Component.pfkeeping)
-    #Component.costkeeping = manager.dict(Component.costkeeping)
-    #Component.riskkeeping = manager.dict(Component.riskkeeping)
-    #pool = Pool(processes=num_processes)
-    #toolbox.register("map", pool.map)
+    manager = Manager()
+    System.bookkeeping = manager.dict(System.bookkeeping)
 
-    Component.pfkeeping = dict(Component.pfkeeping)
-    Component.costkeeping = dict(Component.costkeeping)
-    Component.riskkeeping = dict(Component.riskkeeping)
-    toolbox.register("map", map)
+    pool = Pool(processes=num_processes)
+    toolbox.register("map", pool.map)
+
+    #System.bookkeeping = dict(System.bookkeeping)
+    #toolbox.register("map", map)
 
     print "MULTIOBJECTIVE OPTIMIZATION: parallel version"
     start_delta_time = time.time()
 
     # optimization
-    #random.seed(64)
+    random.seed(64)
 
     logbook = tools.Logbook()
     logbook.header = ["gen", "evals", "nfront", "mean1", "mean2", "tol1", "tol2", "time"]
@@ -201,8 +181,7 @@ def main():
         swarm.gbestfit.append(part.fitness.values)
     delta_time = time.time() - start_delta_time
     logbook.record(gen=1, evals=NPOP,nfront=len(swarm.gbest),
-            mean1='nan', mean2='nan',
-            tol1=TOL1, tol2=TOL2, time=delta_time)
+            mean1='nan', mean2='nan', tol1=TOL1, tol2=TOL2,time=delta_time)
     print(logbook.stream)
 
     gbestfitlast = swarm.gbestfit
@@ -238,9 +217,8 @@ def main():
         uniqueIdx = np.sort(toolbox.unique_rows(RepX, return_index=True)[1])
         swarm.gbest = []
         for idx in uniqueIdx:
-            swarm.gbest.append(toolbox.clone(firstfront[idx]))
+            swarm.gbest.append(firstfront[idx])
         swarm.gbestfit = [part.fitness.values for part in swarm.gbest]
-
 
         #:::: If the external population has reached its maximum allowable ::::#
         if (len(swarm.gbest) > NREP):
@@ -291,8 +269,8 @@ def main():
 
         g+=1
 
-    #pool.close()
-    #pool.join()
+    pool.close()
+    pool.join()
 
     delta_time = time.time() - start_delta_time
     print 'DONE: {} s'.format(str(datetime.timedelta(seconds=delta_time)))
@@ -304,27 +282,6 @@ if __name__ == "__main__":
 
     swarm, logbook = main()
     allfits = [part.fitness.values for part in swarm]
-
-    # sort pfbooking
-    pf_flex = Component.pfkeeping['flexure']
-    indx = np.argsort(pf_flex[0])
-    pf_flex = pf_flex[:,indx]
-    pf_shear = Component.pfkeeping['shear']
-    indx = np.argsort(pf_shear[0])
-    pf_shear = pf_shear[:,indx]
-    pf_deck = Component.pfkeeping['deck']
-    indx = np.argsort(pf_deck[0])
-    pf_deck = pf_deck[:,indx]
-    # save costbooking
-    cost_flex = Component.costkeeping['flexure']
-    indx = np.argsort(cost_flex[0])
-    cost_flex = cost_flex[:,indx]
-    cost_shear = Component.costkeeping['shear']
-    indx = np.argsort(cost_shear[0])
-    cost_shear = cost_shear[:,indx]
-    cost_deck = Component.costkeeping['deck']
-    indx = np.argsort(cost_deck[0])
-    cost_deck = cost_deck[:,indx]
 
     # save data
     def rate2suffix(icorr_mean_list):
@@ -341,15 +298,14 @@ if __name__ == "__main__":
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
-    filename_list = ['logbook_'+suffix+'_MOPSO.npz','pfkeeping_'+suffix+'.npz',
-            'costkeeping_'+suffix+'.npz','popdata_'+suffix+'_MOPSO.npz']
+    filename_list = ['logbook_'+suffix+'_beta_MOPSO2.npz', 'bookkeeping_'+suffix+'.npz',
+            'popdata_'+suffix+'_beta_MOPSO2.npz']
     datafiles = []
     for filename in filename_list:
         datafile = os.path.join(datapath,filename)
         datafiles.append(datafile)
 
     np.savez(datafiles[0], logbook=logbook)
-    #np.savez(datafiles[1], flexure=pf_flex, shear=pf_shear, deck=pf_deck)
-    #np.savez(datafiles[2], flexure=cost_flex, shear=cost_shear, deck=cost_deck)
-    np.savez(datafiles[3], allpop=swarm, allfits=allfits, front=swarm.gbest,
+    np.savez(datafiles[1], bookkeeping=System.bookkeeping)
+    np.savez(datafiles[-1], allpop=swarm, allfits=allfits, front=swarm.gbest,
             frontfits=swarm.gbestfit, pop=swarm, popfits=allfits)

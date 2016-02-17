@@ -21,8 +21,8 @@ from deap import tools
 
 
 NPARAM = 3
-INRTLMAX = 0.5
-INRTLMIN = 0.5
+INRTLMAX = 0.8
+INRTLMIN = 0.8
 PCONF = 1.5
 SCONF = 1.5
 PMIN = 0.0
@@ -34,9 +34,9 @@ NDIV = 50
 NPOP = 500
 # stop criteria
 NGEN = 10
-NMAX = 200
-TOL1 = 0.01
-TOL2 = 100
+NMAX = 100
+TOL1 = 0.001
+TOL2 = 0.001
 NCR = 10
 
 #icorr_mean_list = np.array(input('corrosoin rate:')).astype('double')
@@ -233,7 +233,7 @@ def main():
     random.seed(64)
 
     logbook = tools.Logbook()
-    logbook.header = ["gen", "evals", "nfront", "mean1", "mean2", "tol1", "tol2"]
+    logbook.header = ["gen", "evals", "nfront", "mean1", "mean2", "tol1", "tol2", "time"]
 
     # initialization: first generation
     swarm = toolbox.swarm(n=NPOP)
@@ -251,11 +251,15 @@ def main():
     indices, subindices = toolbox.grid_indices(swarm.gbestfit, grid, NDIV)
     for part, indx, subindx in zip(swarm.gbest, indices, subindices):
         toolbox.set_geoinfo(part, indx, subindx)
+    delta_time = time.time() - start_delta_time
+    logbook.record(gen=1, evals=NPOP,nfront=len(swarm.gbest),
+            mean1='nan', mean2='nan', tol1=TOL1, tol2=TOL2,time=delta_time)
+    print(logbook.stream)
 
     gbestfitlast = swarm.gbestfit
     evolStop = False
     # start the evolution
-    g = 1
+    g = 2
     distances1 = []
     distances2 = []
     frontfitlast = np.array([[1., 0.]])
@@ -312,9 +316,12 @@ def main():
         distance1=[]
         distance2=[]
         frontfit = np.array(swarm.gbestfit)
+        frontfit[frontfit[:,1] == 0,1] = 1.
+        frontfitlast[frontfitlast[:,1] == 0,1] = 1.
         for obj in frontfit:
             distance1.append(min(np.abs(np.log10(frontfitlast[:,0])-np.log10(obj[0]))))
-            distance2.append(min(np.abs(frontfitlast[:,1]-obj[1])))
+            #distance2.append(min(np.abs(frontfitlast[:,1]-obj[1])))
+            distance2.append(min(np.abs(np.log10(frontfitlast[:,1])-np.log10(obj[1]))))
         distances1.append(np.mean(distance1))
         distances2.append(np.mean(distance2))
         longest1 = 0.
@@ -322,7 +329,8 @@ def main():
         for point1 in frontfit:
             for point2 in frontfit:
                 dist1 = np.abs(np.log10(point1[0])-np.log10(point2[0]))
-                dist2 = np.abs(point1[1]-point2[1])
+                #dist2 = np.abs(point1[1]-point2[1])
+                dist2 = np.abs(np.log10(point1[1])-np.log10(point2[1]))
                 if dist1 > longest1:
                     longest1 = dist1
                 if dist2 > longest2:
@@ -335,8 +343,10 @@ def main():
 
         # Gather all the fitnesses in one list and print the stats
         #record = stats.compile(pop)
+        delta_time = time.time() - start_delta_time
         logbook.record(gen=g, evals=NPOP,nfront=len(swarm.gbest),
-                mean1=distances1[-1], mean2=distances2[-1], tol1=tol1, tol2=tol2)
+                mean1=distances1[-1], mean2=distances2[-1],
+                tol1=tol1, tol2=tol2, time=delta_time)
         print(logbook.stream)
 
         g+=1
@@ -370,11 +380,14 @@ if __name__ == "__main__":
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
-    filename_list = ['popdata_'+suffix+'.npz']
+    filename_list = ['logbook_'+suffix+'_beta_MOPSO.npz', 'bookkeeping_'+suffix+'.npz',
+            'popdata_'+suffix+'_beta_MOPSO.npz']
     datafiles = []
     for filename in filename_list:
         datafile = os.path.join(datapath,filename)
         datafiles.append(datafile)
 
+    np.savez(datafiles[0], logbook=logbook)
+    np.savez(datafiles[1], bookkeeping=System.bookkeeping)
     np.savez(datafiles[-1], allpop=swarm, allfits=allfits, front=swarm.gbest,
             frontfits=swarm.gbestfit, pop=swarm, popfits=allfits)

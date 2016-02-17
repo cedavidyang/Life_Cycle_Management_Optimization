@@ -97,7 +97,7 @@ def main():
     #random.seed(64)
 
     logbook = tools.Logbook()
-    logbook.header = ["gen", "evals", "nfront", "mean1", "mean2", "tol1", "tol2"]
+    logbook.header = ["gen", "evals", "nfront", "mean1", "mean2", "tol1", "tol2", "time"]
 
     pop = toolbox.population(n=NPOP)
     fits = toolbox.map(toolbox.evaluate, pop)
@@ -157,8 +157,10 @@ def main():
         frontfitlast = frontfit
 
         # Gather all the fitnesses in one list and print the stats
+        delta_time = time.time() - start_delta_time
         logbook.record(gen=g, evals=nevals,nfront=len(halloffame),
-                mean1=distances1[-1], mean2=distances2[-1], tol1=tol1, tol2=tol2)
+                mean1=distances1[-1], mean2=distances2[-1],
+                tol1=tol1, tol2=tol2, time=delta_time)
         print(logbook.stream)
 
         g+=1
@@ -174,7 +176,7 @@ def main():
 
 if __name__ == "__main__":
 
-    allpop, log, halloffame, nevalsum = main()
+    allpop, logbook, halloffame, nevalsum = main()
     front_parallel = halloffame
 
     allfits = [ind.fitness.values for ind in allpop]
@@ -218,14 +220,15 @@ if __name__ == "__main__":
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
-    filename_list = ['pfkeeping_'+suffix+'.npz', 'costkeeping_'+suffix+'.npz',
-            'popdata_'+suffix+'_NSGA.npz']
+    filename_list = ['logbook_'+suffix+'_NSGA.npz','pfkeeping_'+suffix+'.npz',
+            'costkeeping_'+suffix+'.npz','popdata_'+suffix+'_NSGA.npz']
     datafiles = []
     for filename in filename_list:
         datafile = os.path.join(datapath,filename)
         datafiles.append(datafile)
 
-    #np.savez(datafiles[0], flexure=pf_flex, shear=pf_shear, deck=pf_deck)
-    #np.savez(datafiles[1], flexure=cost_flex, shear=cost_shear, deck=cost_deck)
-    np.savez(datafiles[2], allpop=allpop, allfits=allfits, front=front_parallel,
+    np.savez(datafiles[0], logbook=logbook)
+    #np.savez(datafiles[1], flexure=pf_flex, shear=pf_shear, deck=pf_deck)
+    #np.savez(datafiles[2], flexure=cost_flex, shear=cost_shear, deck=cost_deck)
+    np.savez(datafiles[3], allpop=allpop, allfits=allfits, front=front_parallel,
             frontfits=frontfits, pop=pop, popfits=popfits)
