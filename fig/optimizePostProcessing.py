@@ -1,8 +1,8 @@
 import numpy as np
 import os
 import sys
-import matplotlib.pyplot as plt
-from mpldatacursor import datacursor
+#import matplotlib.pyplot as plt
+#from mpldatacursor import datacursor
 #plt.rc('font', family='serif', size=12)
 #plt.rc('text', usetex=True)
 import matplotlib as mpl
@@ -12,7 +12,7 @@ pgf_with_custom_preamble = {
     #"figure.subplot.bottom": 0.14,
     #"figure.subplot.top": 0.93,
     "font.family": "serif", # use serif/main font for text elements
-    "font.size": 9, # use font size
+    "font.size": 8, # use font size
     "text.usetex": True,    # use inline math for ticks
     #'text.latex.unicode': True,
     #"pgf.rcfonts": False,   # don't setup fonts from rc parameters
@@ -50,6 +50,7 @@ def front(icorr_mean_list):
         sys.exit(1)
     else:
         popdata = np.load(datafile)
+        # all pop is the same as pop
         allpop = popdata['allpop']
         allfits = popdata['allfits']
         front = popdata['front']
@@ -61,8 +62,8 @@ def front(icorr_mean_list):
     plt.figure()
 
     ##plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
-    for ind, popfit in zip(pop, popfits):
-        plt.semilogx(popfit[0], popfit[1], 'b.',
+    for ind, popfit in zip(front, frontfits):
+        plt.semilogx(popfit[0], popfit[1], 'bo',
                 label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(ind[0], ind[1], ind[2]))
 
     plt.ylim((-1,np.max(popfits)*1.01))
@@ -79,9 +80,106 @@ def front(icorr_mean_list):
 
     pause = raw_input('press any key after annotation...')
 
-    plt.semilogx(np.array(allfits)[:,0], np.array(allfits)[:,1], 'o', markerfacecolor='lightgrey',
-            markeredgecolor='lightgrey', alpha=0.8)
-    plt.semilogx(np.array(popfits)[:,0], np.array(popfits)[:,1], 'bo', markeredgecolor='b')
+    #plt.semilogx(np.array(allfits)[:,0], np.array(allfits)[:,1], 'o', markerfacecolor='lightgrey',
+            #markeredgecolor='lightgrey', alpha=0.8)
+    #plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
+
+def compare_indicator(icorr_mean_list):
+    suffix = rate2suffix(icorr_mean_list)
+    filename = 'popdata_'+suffix+'.npz'
+    # load data
+    datapath1 = os.path.join(os.path.abspath('./'), 'data','NSGA-II', 'point-in-time')
+    datafile1 = os.path.join(datapath1,filename)
+    datapath2 = os.path.join(os.path.abspath('./'), 'data','NSGA-II', 'time-dependent')
+    datafile2 = os.path.join(datapath2,filename)
+    datafiles = [datafile1, datafile2]
+    fronts = []
+    for datafile in datafiles:
+        if os.path.isfile(datafile1) is False:
+            print 'no data available, execute optimization first'
+            sys.exit(1)
+        else:
+            popdata = np.load(datafile)
+            front = popdata['front']
+            fronts.append(front)
+
+    from mpl_toolkits.mplot3d import Axes3D
+    plt.ion()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for front,c,m in zip(fronts, ['b','r'], ['o','^']):
+        ax.scatter(front[:,0], front[:,1], front[:,2], c=c, marker=m)
+
+    distance=[]
+    distances=[]
+    front1 = fronts[0]
+    front2 = fronts[1]
+    for sol in front1:
+        vec = np.array(front2)-np.array(sol)
+        distance.append(min(np.linalg.norm(vec, axis=1)))
+    distances.append(np.mean(distance))
+    print distances
+
+def compare_optmization(icorr_mean_list):
+    suffix = rate2suffix(icorr_mean_list)
+    filename1 = 'popdata_'+suffix+'_NSGA.npz'
+    filename2 = 'popdata_'+suffix+'_MOPSO2.npz'
+    # load data
+    datapath = os.path.join(os.path.abspath('./'), 'data')
+    datafile1 = os.path.join(datapath,filename1)
+    datafile2 = os.path.join(datapath,filename2)
+    datafiles = [datafile1, datafile2]
+    frontfits_list = []
+    fronts = []
+    for datafile in datafiles:
+        if os.path.isfile(datafile1) is False:
+            print 'no data available, execute optimization first'
+            sys.exit(1)
+        else:
+            popdata = np.load(datafile)
+            frontfits = popdata['frontfits']
+            front = popdata['front']
+            fronts.append(front)
+            frontfits_list.append(frontfits)
+
+    distance=[]
+    fitdistance=[]
+    frontfit1 = frontfits_list[0]
+    frontfit2 = frontfits_list[1]
+    if len(fronts[0])>len(fronts[1]):
+        frontfit1 = frontfits_list[1]
+        frontfit2 = frontfits_list[0]
+        front1 = fronts[1]
+        front2 = fronts[0]
+    else:
+        frontfit1 = frontfits_list[0]
+        frontfit2 = frontfits_list[1]
+        front1 = fronts[0]
+        front2 = fronts[1]
+    for sol,solfit in zip(front1,frontfit1):
+        vec = np.array(front2)-np.array(sol)
+        fitvec = np.array(frontfit2)-np.array(solfit)
+        distance.append(min(np.linalg.norm(vec, axis=1)))
+        fitdistance.append(min(np.linalg.norm(fitvec, axis=1)))
+    print 'distance in the parameter space: {}'.format(np.mean(distance))
+    print 'distance in the objective space: {}'.format(np.mean(fitdistance))
+
+    from mpl_toolkits.mplot3d import Axes3D
+    plt.ion()
+    fig1 = plt.figure()
+    fig2 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    ax2 = fig2.add_subplot(111, projection='3d')
+    ax1.ticklabel_format(axis='y', style='sci', scilimits=(-3,3))
+    ax1.set_xlabel(u'Failure probability')
+    ax1.set_ylabel(u'Strengthening cost (mm\\textsuperscript{3})')
+    ax2.set_xlabel(u'Flexure'); #ax2.set_xlim([-1,100])
+    ax2.set_ylabel(u'Shear'); #ax2.set_ylim([-1,100])
+    ax2.set_zlabel(u'Deck'); #ax2.set_zlim([-1,100])
+    for front, frontfits,c,m,lb in zip(fronts, frontfits_list, ['b','r'], ['o','^'], ['NSGA-II', 'MOPSO-II']):
+        ax1.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], c=c, marker=m, ls='None',label=lb)
+        ax2.scatter(front[:,0], front[:,1], front[:,2], c=c, marker=m,label=lb)
+
 
 
 def costkeeping(icorr_mean_list):
