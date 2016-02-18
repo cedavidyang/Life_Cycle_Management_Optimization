@@ -230,6 +230,49 @@ def performanceHistory(str_yr_list, icorr_mean_list, year, register=False):
 
     return pf_list
 
+def pointintimeHistory(str_yr_list, icorr_mean_list=[1,1,1], year=100, register=True):
+    key = np.array2string(np.array(str_yr_list, dtype=int))
+    # Structural age
+    service_time = np.arange(START_AGE+TIME_INTERVAL,END_AGE+TIME_INTERVAL,TIME_INTERVAL)
+    comp_type_list = ['flexure', 'shear', 'deck']
+    # construct virgin component
+    no_str_list = [0, 0, 0]
+    virgin_component_list = []
+    for comp_type,str_yr,icorr_mean in zip(comp_type_list, no_str_list, icorr_mean_list):
+        virgin_component = Component(comp_type, maintain_tag=False, str_yr=str_yr)
+        resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
+        virgin_component.setServiceTime(service_time)
+        virgin_component.setResistanceMean(resistance_mean)
+        virgin_component.setResistanceCov(resistance_cov)
+        virgin_component_list.append(virgin_component)
+
+    if str_yr_list == no_str_list:
+        # construct system and return if no strengthening plan
+        system = System(virgin_component_list)
+        pf, pf_dict = system.pointintimePf(year, register)
+    else:
+        # update pf and total_cost if having strengthening
+        # strengthened component
+        component_list = []
+        for comp_type,str_yr,icorr_mean in zip(comp_type_list, str_yr_list, icorr_mean_list):
+            component = Component(comp_type, maintain_tag=False, str_yr=str_yr)
+            resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
+            # construc the list
+            component.setServiceTime(service_time)
+            component.setResistanceMean(resistance_mean)
+            component.setResistanceCov(resistance_cov)
+            component_list.append(component)
+        # construct system
+        system = System(virgin_component_list, component_list)
+        pf,pf_dict = system.pointintimePf(year, register)
+
+    pf_sys = np.max(pf_dict['system'])
+    pf_flex = np.max(pf_dict['flexure'])
+    pf_shear = np.max(pf_dict['shear'])
+    pf_deck = np.max(pf_dict['deck'])
+    pf_list = [pf_sys, pf_flex, pf_shear, pf_deck]
+
+    return pf_list
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
