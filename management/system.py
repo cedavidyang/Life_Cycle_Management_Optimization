@@ -62,7 +62,7 @@ class System(object):
         return sys_pf, pf_dict
 
     def pointintimePf(self, timepoint, register=True):
-        pf_dict = {}
+        pf_dict = {'flexure':[], 'shear':[], 'deck':[], 'system':[]}
         str_yr_list = []
         pf_dummy = 0.
         for i,component in enumerate(self.component_list):
@@ -76,21 +76,22 @@ class System(object):
             virgin_components = np.array(self.virgin_component_list)[np.logical_not(frpindx)]
             for component in components:
                 comp_type = component.comp_type
-                pf_dict[component.comp_type] = component.pointintimePf(t-component.str_yr)
+                pf_dict[component.comp_type].append(component.pointintimePf(t-component.str_yr))
             for component in virgin_components:
                 comp_type = component.comp_type
-                pf_dict[component.comp_type] = component.pointintimePf(t)
+                pf_dict[component.comp_type].append(component.pointintimePf(t))
 
-            flex_survivor = 1-pf_dict['flexure']
-            shear_survivor = 1-pf_dict['shear']
+            flex_survivor = 1-pf_dict['flexure'][-1]
+            shear_survivor = 1-pf_dict['shear'][-1]
             beam_survivor = flex_survivor * shear_survivor
             beam_fail = 1 - beam_survivor
-            deck_survivor = 1-pf_dict['deck']
+            deck_survivor = 1-pf_dict['deck'][-1]
 
             sys_survivor = deck_survivor * (beam_survivor**3 + beam_survivor**3*beam_fail
                 + beam_survivor**2*beam_fail + beam_survivor**3*beam_fail + beam_survivor**3*beam_fail**2)
             sys_pf = 1-sys_survivor
             syspf_list.append(sys_pf)
+            pf_dict['system'].append(sys_pf)
 
         sys_pf_max = np.max(syspf_list)
 
