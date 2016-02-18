@@ -270,11 +270,11 @@ def costkeeping(icorr_mean_list):
     plt.ion()
     plt.figure()
     plt.plot(costkeeping['flexure'][0,:], costkeeping['flexure'][1,:], 'b-',
-            label='flexure')
+            label='Flexure')
     plt.plot(costkeeping['shear'][0,:], costkeeping['shear'][1,:], 'r--',
-            label='shear')
+            label='Shear')
     plt.plot(costkeeping['deck'][0,:], costkeeping['deck'][1,:], 'g-.',
-            label='deck')
+            label='Deck')
     service_life = np.max((np.max(costkeeping['flexure'][0,:]),
             np.max(costkeeping['shear'][0,:]), np.max(costkeeping['deck'][0,:])))
     max_cost = np.max((np.max(costkeeping['flexure'][1,:]),
@@ -362,10 +362,10 @@ def history(icorr_mean_list, str_yr_2dlist):
 
         plt.ion()
         plt.figure()
-        plt.semilogy(time_array, pf_flex, 'b', ls='--', label='flexure')
-        plt.semilogy(time_array, pf_shear, 'r', ls='-.', label='shear')
-        plt.semilogy(time_array, pf_deck, 'g', ls='-', label='deck and system')
-        plt.semilogy(time_array, pf_sys, 'ko', ls='-', label='deck and system')
+        plt.semilogy(time_array, pf_flex, 'b', ls='--', label='Flexure')
+        plt.semilogy(time_array, pf_shear, 'r', ls='-.', label='Shear')
+        plt.semilogy(time_array, pf_deck, 'g', ls='-', label='Deck and system')
+        plt.semilogy(time_array, pf_sys, 'ko', ls='-', label='Deck and system')
 
     else:
         plt.ion()
@@ -437,10 +437,10 @@ def pointintimehistory(icorr_mean_list, str_yr_2dlist):
 
         plt.ion()
         plt.figure()
-        plt.semilogy(time_array, pf_flex, 'b', ls='--', label='flexure')
-        plt.semilogy(time_array, pf_shear, 'r', ls='-.', label='shear')
-        plt.semilogy(time_array, pf_deck, 'g', ls='-', label='deck')
-        plt.semilogy(time_array, pf_sys, 'ko', ls='-', label='system')
+        plt.semilogy(time_array, pf_flex, 'b', ls='--', label='Flexure')
+        plt.semilogy(time_array, pf_shear, 'r', ls='-.', label='Shear')
+        plt.semilogy(time_array, pf_deck, 'g', ls='-', label='Deck')
+        plt.semilogy(time_array, pf_sys, 'ko', ls='-', label='System')
 
     else:
         plt.ion()
