@@ -12,7 +12,7 @@ pgf_with_custom_preamble = {
     #"figure.subplot.bottom": 0.14,
     #"figure.subplot.top": 0.93,
     "font.family": "serif", # use serif/main font for text elements
-    "font.size": 8, # use font size
+    "font.size": 9, # use font size
     "text.usetex": True,    # use inline math for ticks
     #'text.latex.unicode': True,
     #"pgf.rcfonts": False,   # don't setup fonts from rc parameters
@@ -38,7 +38,7 @@ def rate2suffix(icorr_mean_list):
     return suffix
 
 
-def front(icorr_mean_list):
+def front_deprecated(icorr_mean_list):
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
@@ -84,14 +84,71 @@ def front(icorr_mean_list):
             #markeredgecolor='lightgrey', alpha=0.8)
     #plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
 
+def front(icorr_mean_list):
+    suffix = rate2suffix(icorr_mean_list)
+    # load data
+    datapath = os.path.join(os.path.abspath('./'), 'data')
+    filename = 'popdata_'+suffix+'_MOPSO2.npz'
+    filename2 = 'popdata_'+suffix+'.npz'
+    datafile2 = os.path.join(datapath,filename)
+    if os.path.isfile(datafile) is False:
+        print 'no data available, execute Dependent_Optimization_MOPSO2.py with \
+                icorr_mean_list={} fist'.format(icorr_mean_list)
+        sys.exit(1)
+    else:
+        popdata = np.load(datafile)
+        popdata2 = np.load(datafile2)
+        # all pop is the same as pop
+        allpop = popdata['allpop']
+        allfits = popdata['allfits']
+        front2 = popdata2['front']
+        frontfits2 = popdata2['frontfits']
+        front = popdata['front']
+        frontfits = popdata['frontfits']
+        pop = popdata['pop']
+        popfits = popdata['popfits']
+
+    plt.ion()
+    plt.figure()
+
+    ##plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
+    for ind, popfit in zip(front2, frontfits2):
+        ## journal version
+        #plt.semilogx(popfit[0], popfit[1], 'bo',markeredgecolor='b',
+                #label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(ind[0], ind[1], ind[2]))
+        # conference version
+        plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
+                label=u'({:d},{:d},{:d})'.format(ind[0], ind[1], ind[2]))
+
+    plt.ylim((-1,np.max(popfits)*1.01))
+    ax = plt.gca()
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(-3,3))
+
+    plt.xlabel(u'Failure probability')
+    plt.ylabel(u'Strengthening cost (mm\\textsuperscript{3})')
+
+    ## journal version
+    #annotate_text = u'P={x:.2e}, C={y:.2e}\n {{ {label} }}'
+    # conference version
+    annotate_text = u'{label}'
+    datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
+            bbox=None, fontsize=9,
+            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
+
+    pause = raw_input('press any key after annotation...')
+
+    plt.semilogx(np.array(allfits)[:,0], np.array(allfits)[:,1], 'o', markerfacecolor='lightgrey',
+            markeredgecolor='lightgrey', alpha=0.8)
+    plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
+
 def compare_indicator(icorr_mean_list):
     suffix = rate2suffix(icorr_mean_list)
-    filename = 'popdata_'+suffix+'.npz'
+    filename1 = 'popdata_'+suffix+'_beta_NSGA.npz'
+    filename2 = 'popdata_'+suffix+'_MOPSO2.npz'
     # load data
-    datapath1 = os.path.join(os.path.abspath('./'), 'data','NSGA-II', 'point-in-time')
-    datafile1 = os.path.join(datapath1,filename)
-    datapath2 = os.path.join(os.path.abspath('./'), 'data','NSGA-II', 'time-dependent')
-    datafile2 = os.path.join(datapath2,filename)
+    datapath = os.path.join(os.path.abspath('./'), 'data')
+    datafile1 = os.path.join(datapath,filename1)
+    datafile2 = os.path.join(datapath,filename2)
     datafiles = [datafile1, datafile2]
     fronts = []
     for datafile in datafiles:
@@ -103,22 +160,37 @@ def compare_indicator(icorr_mean_list):
             front = popdata['front']
             fronts.append(front)
 
+    distance=[]
+    if len(fronts[0])>len(fronts[1]):
+        front1 = fronts[1]
+        front2 = fronts[0]
+    else:
+        front1 = fronts[0]
+        front2 = fronts[1]
+    for sol,solfit in zip(front1,frontfit1):
+        vec = np.array(front2)-np.array(sol)
+        distance.append(min(np.linalg.norm(vec, axis=1)))
+    print 'distance in the parameter space: {}'.format(np.mean(distance))
+
     from mpl_toolkits.mplot3d import Axes3D
     plt.ion()
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    for front,c,m in zip(fronts, ['b','r'], ['o','^']):
-        ax.scatter(front[:,0], front[:,1], front[:,2], c=c, marker=m)
+    for front,c,m in zip(fronts, ['b','r'], ['o','^'], ['Point-in-time', 'Cumulative-time']):
+        ax.scatter(front[:,0], front[:,1], front[:,2], c=c, marker=m, label=lb)
+    ax.set_xlim([-1,60])
+    ax.set_ylim([-1,60])
+    ax.set_zlim([-1,40])
+    ax.set_xlabel('Flexure')
+    ax.set_ylabel('Shear')
+    ax.set_zlabel('Deck',rotation=90)
+    ax.xaxis._axinfo['label']['space_factor'] = 2.8
+    ax.yaxis._axinfo['label']['space_factor'] = 2.8
+    ax.zaxis._axinfo['label']['space_factor'] = 2.8
+    datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
+            bbox=None, fontsize=9,
+            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
 
-    distance=[]
-    distances=[]
-    front1 = fronts[0]
-    front2 = fronts[1]
-    for sol in front1:
-        vec = np.array(front2)-np.array(sol)
-        distance.append(min(np.linalg.norm(vec, axis=1)))
-    distances.append(np.mean(distance))
-    print distances
 
 def compare_optmization(icorr_mean_list):
     suffix = rate2suffix(icorr_mean_list)
@@ -312,6 +384,81 @@ def history(icorr_mean_list, str_yr_2dlist):
 
             if os.path.isfile(datafile) is False:
                 print 'no data available, execute Life_Cycle_History.py with \
+                        icorr_mean_list={} and str_yr_list={} fist'.format(icorr_mean_list,
+                                str_yr_list)
+                sys.exit(1)
+            else:
+                pfhistory = np.load(datafile)
+                time_array = pfhistory['time']
+                pf_sys = pfhistory['system']
+                ## journal
+                #plt.semilogy(time_array, pf_sys, ls=ls,
+                        #label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(
+                            #str_yr_list[0], str_yr_list[1], str_yr_list[2]))
+                # conference
+                plt.semilogy(time_array, pf_sys, ls=ls,
+                        label=u'({:d},{:d},{:d})'.format(
+                            str_yr_list[0], str_yr_list[1], str_yr_list[2]))
+
+    plt.xlabel('Time (year)')
+    plt.ylabel('Failure probability')
+
+    datacursor(formatter='{label}'.format,display='multiple', draggable=True,
+            bbox=None, fontsize=9,
+            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
+
+
+def pointintimehistory(icorr_mean_list, str_yr_2dlist):
+    if len(str_yr_2dlist) == 1:
+        # only one strengthening option is plotted, thus component pfs are
+        # added
+
+        # load data
+        suffix = rate2suffix(icorr_mean_list)
+        filename = 'pointpfhistory_str_'
+        for ti in str_yr_2dlist[0]:
+            filename = filename + str(int(ti)) + '_'
+        datapath = os.path.join(os.path.abspath('./'), 'data')
+        filename = filename+suffix+'.npz'
+        datafile = os.path.join(datapath,filename)
+
+        if os.path.isfile(datafile) is False:
+            print 'no data available, execute Point_Life_Cycle_History.py with \
+                    icorr_mean_list={} and str_yr_list={} fist'.format(icorr_mean_list,
+                            str_yr_list)
+            sys.exit(1)
+        else:
+            pfhistory = np.load(datafile)
+            time_array = pfhistory['time']
+            pf_sys = pfhistory['system']
+            pf_flex = pfhistory['flexure']
+            pf_shear = pfhistory['shear']
+            pf_deck = pfhistory['deck']
+
+        plt.ion()
+        plt.figure()
+        plt.semilogy(time_array, pf_flex, 'b', ls='--', label='flexure')
+        plt.semilogy(time_array, pf_shear, 'r', ls='-.', label='shear')
+        plt.semilogy(time_array, pf_deck, 'g', ls='-', label='deck')
+        plt.semilogy(time_array, pf_sys, 'ko', ls='-', label='system')
+
+    else:
+        plt.ion()
+        plt.figure()
+        # multiple strengthening options, only system pfs are plotted
+        ls_list = ['-', '--', '-.', ':', '  ', ' ']
+        for str_yr_list,ls in zip(str_yr_2dlist, ls_list):
+            # load data
+            suffix = rate2suffix(icorr_mean_list)
+            filename = 'pfhistory_str_'
+            for ti in str_yr_list:
+                filename = filename + str(int(ti)) + '_'
+            datapath = os.path.join(os.path.abspath('./'), 'data')
+            filename = filename+suffix+'.npz'
+            datafile = os.path.join(datapath,filename)
+
+            if os.path.isfile(datafile) is False:
+                print 'no data available, execute Point_Life_Cycle_History.py with \
                         icorr_mean_list={} and str_yr_list={} fist'.format(icorr_mean_list,
                                 str_yr_list)
                 sys.exit(1)
