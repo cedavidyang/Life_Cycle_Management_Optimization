@@ -46,7 +46,7 @@ NCR = 10
 #icorr_mean_list = np.array(input('corrosoin rate:')).astype('double')
 #year = np.array(input('expected life:')).astype('double')
 #num_processes = np.array(input('number of processes:')).astype('int')
-icorr_mean_list = [1.,1.,1.]
+icorr_mean_list = [1.,1.,0.5]
 year = 100
 num_processes = 40
 
@@ -182,13 +182,15 @@ def main():
     start_delta_time = time.time()
 
     # optimization
-    #random.seed(64)
+    random.seed(6)
 
     logbook = tools.Logbook()
     logbook.header = ["gen", "evals", "nfront", "mean1", "mean2", "tol1", "tol2", "time"]
 
+    allpop = []
     # initialization: first generation
     swarm = toolbox.swarm(n=NPOP)
+    allpop += swarm
     fitnessvalues = toolbox.map(toolbox.evaluate,swarm)
     for i,part in enumerate(swarm):
         part.fitness.values = fitnessvalues[i]
@@ -219,6 +221,7 @@ def main():
             leader = toolbox.select_leader(swarm.gbest)
             w = INRTLMAX - ((INRTLMAX - INRTLMIN)/NMAX)*g
             toolbox.update(part, leader, w)
+            allpop += swarm
         fitnessvalues = toolbox.map(toolbox.evaluate,swarm)
         for i,part in enumerate(swarm):
             part.fitness.values = fitnessvalues[i]
@@ -298,12 +301,17 @@ def main():
     print 'DONE: {} s'.format(str(datetime.timedelta(seconds=delta_time)))
 
 
-    return swarm, logbook
+    return swarm, logbook, allpop
 
 if __name__ == "__main__":
 
-    swarm, logbook = main()
-    allfits = [part.fitness.values for part in swarm]
+    swarm, logbook, allpop = main()
+    #allfits = [part.fitness.values for part in swarm]
+
+    allfits = [part.fitness.values for part in allpop]
+    frontfits = swarm.gbestfit
+    pop = swarm
+    popfits = [ind.fitness.values for ind in pop]
 
     # sort pfbooking
     pf_flex = Component.pfkeeping['flexure']
@@ -341,8 +349,8 @@ if __name__ == "__main__":
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
-    filename_list = ['logbook_'+suffix+'_MOPSO.npz','pfkeeping_'+suffix+'.npz',
-            'costkeeping_'+suffix+'.npz','popdata_'+suffix+'_MOPSO.npz']
+    filename_list = ['logbook_'+suffix+'_MOPSO2.npz','pfkeeping_'+suffix+'.npz',
+            'costkeeping_'+suffix+'.npz','popdata_'+suffix+'_MOPSO2.npz']
     datafiles = []
     for filename in filename_list:
         datafile = os.path.join(datapath,filename)
@@ -351,5 +359,7 @@ if __name__ == "__main__":
     np.savez(datafiles[0], logbook=logbook)
     #np.savez(datafiles[1], flexure=pf_flex, shear=pf_shear, deck=pf_deck)
     #np.savez(datafiles[2], flexure=cost_flex, shear=cost_shear, deck=cost_deck)
-    np.savez(datafiles[3], allpop=swarm, allfits=allfits, front=swarm.gbest,
-            frontfits=swarm.gbestfit, pop=swarm, popfits=allfits)
+    #np.savez(datafiles[3], allpop=swarm, allfits=allfits, front=swarm.gbest,
+            #frontfits=swarm.gbestfit, pop=swarm, popfits=allfits)
+    np.savez(datafiles[3], allpop=allpop, allfits=allfits, front=swarm.gbest,
+            frontfits=swarm.gbestfit, pop=swarm, popfits=popfits)
