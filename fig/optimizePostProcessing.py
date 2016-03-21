@@ -485,3 +485,57 @@ def pointintimehistory(icorr_mean_list, str_yr_2dlist):
     datacursor(formatter='{label}'.format,display='multiple', draggable=True,
             bbox=None, fontsize=9,
             arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
+
+
+def lifetimefitting(icorr_mean_list, str_yr_list=[0., 0., 0.]):
+    from scipy import stats
+    from scipy.optimize import curve_fit
+
+    # load data
+    suffix = rate2suffix(icorr_mean_list)
+    filename = 'pfhistory_str_'
+    for ti in str_yr_list:
+        filename = filename + str(int(ti)) + '_'
+    datapath = os.path.join(os.path.abspath('./'), 'data')
+    filename = filename+suffix+'.npz'
+    datafile = os.path.join(datapath,filename)
+
+    if os.path.isfile(datafile) is False:
+        print 'no data available, execute Life_Cycle_History.py with \
+                icorr_mean_list={} and str_yr_list={} fist'.format(icorr_mean_list,
+                        str_yr_list)
+        sys.exit(1)
+    else:
+        pfhistory = np.load(datafile)
+        time_array = pfhistory['time']
+        pf_sys = pfhistory['system']
+        # lifetime fitting
+        # candidate cdfs
+        def fitexpon(xdata, *params):
+            lbd = params[0]
+            return stats.expon.cdf(xdata, scale=1./lbd)
+        def fitweibull(xdata, *params):
+            k = params[0]    # shape param k in Weibull wiki
+            lbd = params[1]    # scale param lbd in Weibull wiki
+            return stats.weibull_min.cdf(xdata, k, scale=lbd)
+        def fitgamma(xdata, *params):
+            k=params[0]
+            theta = params[1]
+            return stats.gamma.cdf(xdata, k, scale=theta)
+        poptExpon, pcovExpon = curve_fit(fitexpon, time_array, pf_sys, p0=[1.], bounds=(0.,np.inf))
+        poptWbl, pcovWbl = curve_fit(fitweibull, time_array, pf_sys, p0=[1.,5.], bounds=([0.,0.],[np.inf, np.inf]))
+        poptGamma, pcovGamma = curve_fit(fitgamma, time_array, pf_sys, p0=[1.,1.], bounds=([0.,0.],[np.inf,np.inf]))
+
+    plt.ion()
+    plt.figure()
+    plt.semilogy(time_array, pf_sys, 'o', label='$T_f$ data')
+    plt.semilogy(time_array, fitexpon(time_array, poptExpon[0]), ls='--', label='Exponential')
+    plt.semilogy(time_array, fitweibull(time_array,poptWbl[0],poptWbl[1]), ls='-', label='Weibull')
+    plt.semilogy(time_array, fitgamma(time_array,poptGamma[0],poptGamma[1]), ls=':', label='Gamma')
+    plt.xlabel('Time (year)')
+    plt.ylabel('Failure probability')
+    #plt.legend(loc='lower right', fontsize=9)
+
+    datacursor(formatter='{label}'.format,display='multiple', draggable=True,
+            bbox=None, fontsize=9,
+            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
