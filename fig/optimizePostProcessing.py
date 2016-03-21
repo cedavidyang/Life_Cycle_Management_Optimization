@@ -192,10 +192,14 @@ def compare_indicator(icorr_mean_list):
             arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
 
 
-def compare_optmization(icorr_mean_list):
+def compare_optmization(icorr_mean_list,indicator=None):
     suffix = rate2suffix(icorr_mean_list)
-    filename1 = 'popdata_'+suffix+'_NSGA.npz'
-    filename2 = 'popdata_'+suffix+'_MOPSO2.npz'
+    if indicator is None or indicator.lower() == 'cumulative':
+        filename1 = 'popdata_'+suffix+'_NSGA.npz'
+        filename2 = 'popdata_'+suffix+'_MOPSO2.npz'
+    else:
+        filename1 = 'popdata_'+suffix+'beta_NSGA.npz'
+        filename2 = 'popdata_'+suffix+'beta_MOPSO2.npz'
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
     datafile1 = os.path.join(datapath,filename1)
