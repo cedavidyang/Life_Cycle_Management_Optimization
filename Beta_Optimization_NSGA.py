@@ -202,8 +202,8 @@ if __name__ == "__main__":
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
-    filename_list = ['logbook_'+suffix+'_NSGA.npz','bookkeeping_'+suffix+'.npz',
-            'popdata_'+suffix+'_NSGA.npz']
+    filename_list = ['logbook_'+suffix+'beta_NSGA.npz','bookkeeping_'+suffix+'.npz',
+            'popdata_'+suffix+'beta_NSGA.npz']
     datafiles = []
     for filename in filename_list:
         datafile = os.path.join(datapath,filename)
