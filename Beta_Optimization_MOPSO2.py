@@ -46,7 +46,7 @@ NCR = 10
 #num_processes = np.array(input('number of processes:')).astype('int')
 icorr_mean_list = [1.,1.,1.]
 year = 100
-num_processes = 2
+num_processes = 40
 
 creator.create("FitnessMulti", base.Fitness, weights=(-1.0,-1.0))
 creator.create("Particle", list, fitness=creator.FitnessMulti, speed=list,
