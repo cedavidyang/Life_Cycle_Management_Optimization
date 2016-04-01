@@ -36,7 +36,7 @@ NDIV = 50
 NPOP = 500
 # stop criteria
 NGEN = 10
-NMAX = 100
+NMAX = 5
 TOL1 = 0.001
 TOL2 = 0.001
 NCR = 10
@@ -46,7 +46,7 @@ NCR = 10
 #num_processes = np.array(input('number of processes:')).astype('int')
 icorr_mean_list = [1.,1.,1.]
 year = 100
-num_processes = 40
+num_processes = 2
 
 creator.create("FitnessMulti", base.Fitness, weights=(-1.0,-1.0))
 creator.create("Particle", list, fitness=creator.FitnessMulti, speed=list,
@@ -149,7 +149,11 @@ def main():
     System.resetBookKeeping()
 
     ## use existing bookkeeping data
-    #bookkeeping = np.load('bookkeeping.npz')
+    #suffix = rate2suffix(icorr_mean_list)
+    #filename = 'bookkeeping_'+suffix+'.npz'
+    #datapath = os.path.join(os.path.abspath('./'), 'data')
+    #datafile = os.path.join(datapath,pfname)
+    #System.bookkeeping = np.load(datafile)['bookkeeping']
 
     manager = Manager()
     System.bookkeeping = manager.dict(System.bookkeeping)
@@ -273,6 +277,8 @@ def main():
 
     pool.close()
     pool.join()
+
+    System.bookkeeping = System.bookkeeping.copy()
 
     delta_time = time.time() - start_delta_time
     print 'DONE: {} s'.format(str(datetime.timedelta(seconds=delta_time)))
