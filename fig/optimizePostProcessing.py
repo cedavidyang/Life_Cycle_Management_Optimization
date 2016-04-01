@@ -141,10 +141,10 @@ def front(icorr_mean_list):
             markeredgecolor='lightgrey', alpha=0.8)
     plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
 
-def compare_indicator(icorr_mean_list):
+def compare_indicator(icorr_mean_list, op='NSGA'):
     suffix = rate2suffix(icorr_mean_list)
-    filename1 = 'popdata_'+suffix+'_beta_NSGA.npz'
-    filename2 = 'popdata_'+suffix+'_MOPSO2.npz'
+    filename1 = 'popdata_'+suffix+'_beta_'+op+'.npz'
+    filename2 = 'popdata_'+suffix+'_'+op+'.npz'
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
     datafile1 = os.path.join(datapath,filename1)
@@ -167,7 +167,7 @@ def compare_indicator(icorr_mean_list):
     else:
         front1 = fronts[0]
         front2 = fronts[1]
-    for sol,solfit in zip(front1,frontfit1):
+    for sol in front1:
         vec = np.array(front2)-np.array(sol)
         distance.append(min(np.linalg.norm(vec, axis=1)))
     print 'distance in the parameter space: {}'.format(np.mean(distance))
@@ -176,7 +176,7 @@ def compare_indicator(icorr_mean_list):
     plt.ion()
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    for front,c,m in zip(fronts, ['b','r'], ['o','^'], ['Point-in-time', 'Cumulative-time']):
+    for front,c,m,lb in zip(fronts, ['r','b'], ['^','o'], ['Point-in-time', 'Cumulative-time']):
         ax.scatter(front[:,0], front[:,1], front[:,2], c=c, marker=m, label=lb)
     ax.set_xlim([-1,60])
     ax.set_ylim([-1,60])
