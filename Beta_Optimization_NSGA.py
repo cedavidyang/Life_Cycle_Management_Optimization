@@ -171,6 +171,8 @@ def main():
     pool.close()
     pool.join()
 
+    System.bookkeeping = System.bookkeeping.copy()
+
     delta_time = time.time() - start_delta_time
     print 'DONE: {} s'.format(str(datetime.timedelta(seconds=delta_time)))
 
