@@ -126,7 +126,7 @@ def performanceFunc(str_yr_list, icorr_mean_list=[1,1,1], year=100, register=Tru
 
 def pointintimeFunc(str_yr_list, icorr_mean_list=[1,1,1], year=100, register=True):
     key = np.array2string(np.array(str_yr_list, dtype=int))
-    if key in System.bookkeeping.iterkeys():
+    if key in iter(System.bookkeeping.keys()):
         pf = System.bookkeeping[key][0]
         total_cost = System.bookkeeping[key][1]
     else:
