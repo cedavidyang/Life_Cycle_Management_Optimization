@@ -36,7 +36,7 @@ NDIV = 50
 NPOP = 500
 # stop criteria
 NGEN = 10
-NMAX = 5
+NMAX = 100
 TOL1 = 0.001
 TOL2 = 0.001
 NCR = 10
@@ -157,7 +157,6 @@ def main():
 
     manager = Manager()
     System.bookkeeping = manager.dict(System.bookkeeping)
-
     pool = Pool(processes=num_processes)
     toolbox.register("map", pool.map)
 
