@@ -89,8 +89,10 @@ def front(icorr_mean_list):
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
     filename = 'popdata_'+suffix+'_MOPSO2.npz'
+    filename = 'popdata_'+suffix+'.npz'
     filename2 = 'popdata_'+suffix+'.npz'
-    datafile2 = os.path.join(datapath,filename)
+    datafile = os.path.join(datapath,filename)
+    datafile2 = os.path.join(datapath,filename2)
     if os.path.isfile(datafile) is False:
         print 'no data available, execute Dependent_Optimization_MOPSO2.py with \
                 icorr_mean_list={} fist'.format(icorr_mean_list)
@@ -112,34 +114,78 @@ def front(icorr_mean_list):
     plt.figure()
 
     ##plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
-    for ind, popfit in zip(front2, frontfits2):
-        ## journal version
-        #plt.semilogx(popfit[0], popfit[1], 'bo',markeredgecolor='b',
-                #label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(ind[0], ind[1], ind[2]))
-        # conference version
-        plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
-                label=u'({:d},{:d},{:d})'.format(ind[0], ind[1], ind[2]))
+    #for ind, popfit in zip(front2, frontfits2):
+        ### journal version
+        ##plt.semilogx(popfit[0], popfit[1], 'bo',markeredgecolor='b',
+                ##label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(ind[0], ind[1], ind[2]))
+        ##conference version
+        #plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
+                #label=u'({:d},{:d},{:d})'.format(ind[0], ind[1], ind[2]))
 
-    plt.ylim((-1,np.max(popfits)*1.01))
+    plt.ylim((-1,np.max(popfits)*1.134))
     ax = plt.gca()
     ax.ticklabel_format(axis='y', style='sci', scilimits=(-3,3))
 
-    plt.xlabel(u'Failure probability')
-    plt.ylabel(u'Strengthening cost (mm\\textsuperscript{3})')
+    plt.xlabel(u'Cumulative-time failure probability')
+    plt.ylabel(u'Volume of FRP (mm\\textsuperscript{3})')
 
     ## journal version
     #annotate_text = u'P={x:.2e}, C={y:.2e}\n {{ {label} }}'
     # conference version
-    annotate_text = u'{label}'
+    #annotate_text = u'{label}'
+
+    for ind, popfit in zip(front2, frontfits2):
+        if suffix == 'bbb':
+            # conference version
+            if ind.tolist() == [0,0,9]:
+                plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
+                        label='Solution A')
+            elif ind.tolist() == [0,0,24]:
+                plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
+                        label='Solution B')
+            elif ind.tolist() == [0,26,29]:
+                plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
+                        label='Solution C')
+            elif ind.tolist() == [51,32,29]:
+                plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
+                        label='Solution D')
+        elif suffix == 'bba':
+            if ind.tolist() == [0,0,26]:
+                plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
+                        label='Solution E')
+            elif ind.tolist() == [0,11,9]:
+                plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
+                        label='Solution F')
+
     datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
             bbox=None, fontsize=9,
             arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
-
     pause = raw_input('press any key after annotation...')
-
     plt.semilogx(np.array(allfits)[:,0], np.array(allfits)[:,1], 'o', markerfacecolor='lightgrey',
             markeredgecolor='lightgrey', alpha=0.8)
     plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
+    for ind, popfit in zip(front2, frontfits2):
+        if suffix == 'bbb':
+            # conference version
+            if ind.tolist() == [0,0,9]:
+                plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
+                        label='Solution A')
+            elif ind.tolist() == [0,0,24]:
+                plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
+                        label='Solution B')
+            elif ind.tolist() == [0,26,29]:
+                plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
+                        label='Solution C')
+            elif ind.tolist() == [51,32,29]:
+                plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
+                        label='Solution D')
+        elif suffix == 'bba':
+            if ind.tolist() == [0,0,26]:
+                plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
+                        label='Solution E')
+            elif ind.tolist() == [0,11,9]:
+                plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
+                        label='Solution F')
 
 def compare_indicator(icorr_mean_list, op='NSGA'):
     suffix = rate2suffix(icorr_mean_list)
@@ -274,9 +320,9 @@ def costkeeping(icorr_mean_list):
     plt.ion()
     plt.figure()
     plt.plot(costkeeping['flexure'][0,:], costkeeping['flexure'][1,:], 'b-',
-            label='Flexure')
+            label='Flexure (girder)')
     plt.plot(costkeeping['shear'][0,:], costkeeping['shear'][1,:], 'r--',
-            label='Shear')
+            label='Shear (girder)')
     plt.plot(costkeeping['deck'][0,:], costkeeping['deck'][1,:], 'g-.',
             label='Deck')
     service_life = np.max((np.max(costkeeping['flexure'][0,:]),
@@ -287,7 +333,7 @@ def costkeeping(icorr_mean_list):
     plt.ylim((-1,max_cost*1.01))
 
     plt.xlabel('Strengthening time (year)')
-    plt.ylabel('Cost (mm\\textsuperscript{3})')
+    plt.ylabel('Volumn of FRP (mm\\textsuperscript{3})')
 
     ax = plt.gca()
     ax.ticklabel_format(axis='y', style='sci', scilimits=(-3,3))
@@ -366,8 +412,8 @@ def history(icorr_mean_list, str_yr_2dlist):
 
         plt.ion()
         plt.figure()
-        plt.semilogy(time_array, pf_flex, 'b', ls='--', label='Flexure')
-        plt.semilogy(time_array, pf_shear, 'r', ls='-.', label='Shear')
+        plt.semilogy(time_array, pf_flex, 'b', ls='--', label='Flexure (girder)')
+        plt.semilogy(time_array, pf_shear, 'r', ls='-.', label='Shear (girder)')
         plt.semilogy(time_array, pf_deck, 'g', ls='-', label='Deck and system')
         plt.semilogy(time_array, pf_sys, 'ko', ls='-', label='Deck and system')
 
@@ -400,12 +446,19 @@ def history(icorr_mean_list, str_yr_2dlist):
                         #label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(
                             #str_yr_list[0], str_yr_list[1], str_yr_list[2]))
                 # conference
-                plt.semilogy(time_array, pf_sys, ls=ls,
-                        label=u'({:d},{:d},{:d})'.format(
-                            str_yr_list[0], str_yr_list[1], str_yr_list[2]))
-
+                if str_yr_list.tolist() == [0,0,0]:
+                    label='No strengthening'
+                elif str_yr_list.tolist() == [0,0,9]:
+                    label='Solution A'
+                elif str_yr_list.tolist() == [0,0,24]:
+                    label='Solution B'
+                elif str_yr_list.tolist() == [0,26,29]:
+                    label='Solution C'
+                elif str_yr_list.tolist() == [51,32,29]:
+                    label='Solution D'
+                plt.semilogy(time_array, pf_sys, ls=ls, label=label)
     plt.xlabel('Time (year)')
-    plt.ylabel('Failure probability')
+    plt.ylabel('Cumulative-time failure probability')
 
     datacursor(formatter='{label}'.format,display='multiple', draggable=True,
             bbox=None, fontsize=9,
