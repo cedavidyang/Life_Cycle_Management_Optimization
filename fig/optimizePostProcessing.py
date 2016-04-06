@@ -421,7 +421,7 @@ def history(icorr_mean_list, str_yr_2dlist):
         plt.ion()
         plt.figure()
         # multiple strengthening options, only system pfs are plotted
-        ls_list = ['-', '--', '-.', ':', '  ', ' ']
+        ls_list = ['-', '--', '-.', ':', '-', '--']
         for str_yr_list,ls in zip(str_yr_2dlist, ls_list):
             # load data
             suffix = rate2suffix(icorr_mean_list)
@@ -446,15 +446,15 @@ def history(icorr_mean_list, str_yr_2dlist):
                         #label=u'flexure: {:d}, shear: {:d}, deck: {:d}'.format(
                             #str_yr_list[0], str_yr_list[1], str_yr_list[2]))
                 # conference
-                if str_yr_list.tolist() == [0,0,0]:
+                if str_yr_list == [0,0,0]:
                     label='No strengthening'
-                elif str_yr_list.tolist() == [0,0,9]:
+                elif str_yr_list == [0,0,9]:
                     label='Solution A'
-                elif str_yr_list.tolist() == [0,0,24]:
+                elif str_yr_list == [0,0,24]:
                     label='Solution B'
-                elif str_yr_list.tolist() == [0,26,29]:
+                elif str_yr_list == [0,26,29]:
                     label='Solution C'
-                elif str_yr_list.tolist() == [51,32,29]:
+                elif str_yr_list == [51,32,29]:
                     label='Solution D'
                 plt.semilogy(time_array, pf_sys, ls=ls, label=label)
     plt.xlabel('Time (year)')
