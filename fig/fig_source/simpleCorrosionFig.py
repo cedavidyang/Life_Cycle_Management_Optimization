@@ -1,5 +1,6 @@
 # post processing of simple corrosion results
 
+import os
 import numpy as np
 import matplotlib as mpl
 #mpl.use("pgf")
@@ -211,27 +212,41 @@ def main(component_type, service_time, icorr_mean, str_yr=None):
     return ti1_smp, np.array(resistance_smp), np.array(resistance_mean), np.array(resistance_cov)
 
 if __name__ == '__main__':
-    # flexural data
     service_time = np.arange(START_AGE+TIME_INTERVAL,END_AGE+TIME_INTERVAL,TIME_INTERVAL)
-    flex_ti1_smp, resistance_rc, flex_mean, flex_cov = main('flexure', service_time, 1)
-    dummy, resistance_frp, dummy, dummy = main('flexure', service_time, 1, 30)
-    # shear data
-    shear_ti1_smp, dummy, shear_mean, shear_cov = main('shear', service_time, 1)
-    # deck data
-    deck_ti1_smp, dummy, deck_mean, deck_cov = main('deck', service_time, 1)
+    if not os.path.isfile('./data/deterioration_bbb.npz'):
+        # flexural data
+        flex_ti1_smp, resistance_rc, flex_mean, flex_cov = main('flexure', service_time, 1)
+        dummy, resistance_frp, dummy, dummy = main('flexure', service_time, 1, 30)
+        # shear data
+        shear_ti1_smp, dummy, shear_mean, shear_cov = main('shear', service_time, 1)
+        # deck data
+        deck_ti1_smp, dummy, deck_mean, deck_cov = main('deck', service_time, 1)
+    else:
+        deterioration = np.load('./data/deterioration_bbb.npz')
+        flex_ti1_smp = deterioration['flex_ti1_smp']
+        resistance_rc = deterioration['resistance_rc']
+        flex_mean = deterioration['flex_mean']
+        flex_cov = deterioration['flex_cov']
+        resistance_frp = deterioration['resistance_frp']
+        shear_ti1_smp = deterioration['shear_ti1_smp']
+        shear_mean = deterioration['shear_mean']
+        shear_cov = deterioration['shear_cov']
+        deck_ti1_smp = deterioration['deck_ti1_smp']
+        deck_mean = deterioration['deck_mean']
+        deck_cov = deterioration['deck_cov']
 
     plt.close('all')
     #plt.rc('font', family='serif', size=12)
-    num_bins = 100
 
     # corrosion initiation
+    num_bins = 100
     plt.figure()
     plt.hist(flex_ti1_smp, bins=num_bins, # range=range(flex_ti1_smp, 0,100),
-            normed=True, color='blue', histtype='step', label='flexure')
+            normed=True, color='blue', histtype='step', label='Flexure (girder)')
     plt.hist(shear_ti1_smp, bins=num_bins, # range=range(shear_ti1_smp, 0,100),
-            normed=True, color='red', histtype='step', label='shear')
+            normed=True, color='red', histtype='step', label='Shear (girder)')
     plt.hist(deck_ti1_smp, bins=num_bins, # range=range(deck_ti1_smp, 0,100),
-            normed=True, color='green', histtype='step', label='deck')
+            normed=True, color='green', histtype='step', label='Deck')
     plt.xlim((0, 60))
     plt.xlabel('Time (year)')
     plt.ylabel('PDF')
@@ -254,26 +269,30 @@ if __name__ == '__main__':
     plt.hist(resistance_frp[0], bins=num_bins, color='red', facecolor='none',
             ls='dashed', normed=True)
     plt.ylim((0,0.002))
-    ax = plt.gca()
-    ax.annotate('initial strength', xy=(1981, 5.e-4), xytext=(2387, 7.29e-4),
-            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k', shrinkB=0))
-    ax.annotate('after strengthening', xy=(2079,9.6e-4), xytext=(2387, 1.2e-3),
-            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k', shrinkB=0))
+    #ax = plt.gca()
+    #ax.annotate('initial strength', xy=(1981, 5.e-4), xytext=(2387, 7.29e-4),
+            #arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k', shrinkB=0))
+    #ax.annotate('after strengthening', xy=(2079,9.6e-4), xytext=(2387, 1.2e-3),
+            #arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k', shrinkB=0))
     xlims = plt.xlim()
     xticks = np.linspace(xlims[0], xlims[1], 500)
-    plt.plot(xticks, lognormal_rc.pdf(xticks), 'b')
-    plt.plot(xticks, lognormal_frp.pdf(xticks), 'r')
+    plt.plot(xticks, lognormal_rc.pdf(xticks), 'b', label='Initial strength')
+    plt.plot(xticks, lognormal_frp.pdf(xticks), 'r', label='After strengthening')
     plt.xlabel('Flexural strength of bridge girders (kN-m)')
     plt.ylabel('PDF')
+    annotate_text = u'{label}'
+    datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
+            bbox=None, fontsize=9,
+            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
 
     # resistance history
     f, (ax1, ax2) = plt.subplots(2, sharex=True)
     # MC reults
-    ax1.plot(service_time, flex_mean[1:]/flex_mean[0], 'b-', label='Flexure' )
-    ax1.plot(service_time, shear_mean[1:]/shear_mean[0], 'r-', label='Shear' )
+    ax1.plot(service_time, flex_mean[1:]/flex_mean[0], 'b-', label='Flexure (girder)' )
+    ax1.plot(service_time, shear_mean[1:]/shear_mean[0], 'r-', label='Shear (girder)' )
     ax1.plot(service_time, deck_mean[1:]/deck_mean[0], 'g-', label='Deck' )
-    ax2.plot(service_time, flex_cov[1:], 'b--', label='Flexure' )
-    ax2.plot(service_time, shear_cov[1:], 'r--', label='Shear' )
+    ax2.plot(service_time, flex_cov[1:], 'b--', label='Flexure (girder)' )
+    ax2.plot(service_time, shear_cov[1:], 'r--', label='Shear (girder)' )
     ax2.plot(service_time, deck_cov[1:], 'g--', label='Deck' )
     # figure settings
     ax2.set_xlabel('Time (year)')
@@ -282,6 +301,7 @@ if __name__ == '__main__':
     f.text(0.03, 0.5, r'Normalized resistance', ha='center', va='center', rotation='vertical')
     ax1.annotate('Mean values', xy=(5, 0.8), bbox=dict(boxstyle="round", fc="w"))
     ax2.annotate('Coefficient of variation', xy=(5, 0.145), bbox=dict(boxstyle="round", fc="w"))
+    ax1.set_ylim((0.75, 1.001))
     #majorFormatter = FormatStrFormatter('%.2e')
     #ax1.yaxis.set_major_formatter(majorFormatter)
     #ax2.yaxis.set_major_formatter(majorFormatter)
