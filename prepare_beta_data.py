@@ -37,8 +37,8 @@ def parallelbetadeck(timecombo):
 if __name__ == '__main__':
 
     icorr_mean_list = [1.,1.,1.]
-    life = 5
-    num_processes = 40
+    life = 100
+    num_processes = 20
 
 
     flexdata = np.zeros((life,life+2))
