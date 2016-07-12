@@ -5,6 +5,7 @@ import math
 import operator
 import random
 import numpy as np
+import copy
 from multiprocessing import Pool, Manager
 
 import time
@@ -88,12 +89,20 @@ def update_particle(part, best, w, phi1, phi2):
         elif pos > part.pmax:
             newpos[i] = part.pmax
             #part.speed[i] = -part.speed[i]
-    for i, speed in enumerate(part.speed):
-        if speed < part.smin*(part.pmax-part.pmin):
-            part.speed[i] = part.smin*(part.pmax-part.pmin)
-        elif speed > part.smax*(part.pmax-part.pmin):
-            part.speed[i] = part.smax*(part.pmax-part.pmin)
-    #part[:] = list(map(operator.add, part, part.speed))
+    # speed limit
+    # keep direction
+    lmdpos = np.max(part.speed)/(part.smax*(part.pmax-part.pmin))
+    lmdneg = np.min(part.speed)/(part.smin*(part.pmax-part.pmin))
+    lmd = np.maximum(lmdpos, lmdneg)
+    if lmd>1:
+        part.speed = part.speed/lmd
+    # # change direction
+    # for i, speed in enumerate(part.speed):
+        # if speed < part.smin*(part.pmax-part.pmin):
+            # part.speed[i] = part.smin*(part.pmax-part.pmin)
+        # elif speed > part.smax*(part.pmax-part.pmin):
+            # part.speed[i] = part.smax*(part.pmax-part.pmin)
+    # #part[:] = list(map(operator.add, part, part.speed))
     part[:] = newpos
 
 def select_leader(gbest):
@@ -236,7 +245,7 @@ def main():
 
         # update external archive
         firstfront = toolbox.sort(swarm, NPOP, first_front_only=True)[0]
-        firstfront = toolbox.sort(swarm.gbest+firstfront, NREP+NPOP, first_front_only=True)[0]
+        firstfront = toolbox.sort(copy.deepcopy(swarm.gbest+firstfront), NREP+NPOP, first_front_only=True)[0]
         RepX = np.array([part[:] for part in firstfront])
         uniqueIdx = np.sort(toolbox.unique_rows(RepX, return_index=True)[1])
         swarm.gbest = []

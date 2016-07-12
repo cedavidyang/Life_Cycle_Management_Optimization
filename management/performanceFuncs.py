@@ -274,6 +274,32 @@ def pointintimeHistory(str_yr_list, icorr_mean_list=[1,1,1], year=100, register=
 
     return pf_list
 
+def generateCompData(comp_type, str_yr, year, icorr_mean=1., life=100):
+    # Structural age
+    service_time = np.arange(START_AGE+TIME_INTERVAL,END_AGE+TIME_INTERVAL,TIME_INTERVAL)
+    comp_type_list = ['flexure', 'shear', 'deck']
+    # construct virgin component
+    virgin_component = Component(comp_type, maintain_tag=False, str_yr=0)
+    resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
+    virgin_component.setServiceTime(service_time)
+    virgin_component.setResistanceMean(resistance_mean)
+    virgin_component.setResistanceCov(resistance_cov)
+    pf = virgin_component.pointintimePf(year, register=False)
+
+    #strengthened component
+    if str_yr != 0:
+        if year<str_yr:
+            pf = virgin_component.pointintimePf(year, register=False)
+        else:
+            component = Component(comp_type, str_yr=str_yr)
+            resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
+            component.setServiceTime(service_time)
+            component.setResistanceMean(resistance_mean)
+            component.setResistanceCov(resistance_cov)
+            pf = component.pointintimePf(year, register=False)
+
+    return pf,cost
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     print "debugging of performance function"
