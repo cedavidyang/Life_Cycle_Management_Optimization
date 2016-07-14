@@ -289,6 +289,7 @@ def generateCompData(comp_type, str_yr, year, icorr_mean=1., life=100):
     #strengthened component
     if str_yr != 0:
         if year<=str_yr:
+            resistance_mean,resistance_cov,cost = simpleCorrosionLHS(comp_type, service_time, icorr_mean, str_yr)
             pf = virgin_component.pointintimePf(year, register=False)
         else:
             component = Component(comp_type, str_yr=str_yr)
