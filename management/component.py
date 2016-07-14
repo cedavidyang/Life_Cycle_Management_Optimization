@@ -209,6 +209,7 @@ class Component(object):
             scale=M_LLIM_DECK_MEAN*M_LLIM_DECK_COV
         # loc=mean-np.sqrt(6)*stdv/np.pi*np.euler_gamma,
         # scale=np.sqrt(6)*stdv/np.pi
+	mean = loc+scale*np.euler_gamma
         SL = stats.gumbel_r(loc=loc,scale=scale)
         rvs = [R, SL]
         corr = np.eye(2)
