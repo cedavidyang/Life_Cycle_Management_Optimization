@@ -199,16 +199,16 @@ class Component(object):
         R = stats.lognorm(np.sqrt(np.log(1+rcov**2)), scale=rmean/np.sqrt(1+rcov**2))
         # live load array
         if 'f' in self.comp_type.lower():
-            mean=M_LLIM_MEAN/0.74
-            stdv=M_LLIM_MEAN/0.74*M_LLIM_COV
+            loc=M_LLIM_MEAN
+            scale=M_LLIM_MEAN*M_LLIM_COV
         elif 's' in self.comp_type.lower():
-            mean=V_LLIM_MEAN/0.68
-            stdv=V_LLIM_MEAN/0.68*V_LLIM_COV
+            loc=V_LLIM_MEAN
+            scale=V_LLIM_MEAN*V_LLIM_COV
         elif 'd' in self.comp_type.lower():
-            mean= M_LLIM_DECK_MEAN/0.74
-            stdv=M_LLIM_DECK_MEAN/0.74*M_LLIM_DECK_COV
-        loc=mean-np.sqrt(6)*stdv/np.pi*np.euler_gamma,
-        scale=np.sqrt(6)*stdv/np.pi
+            loc= M_LLIM_DECK_MEAN
+            scale=M_LLIM_DECK_MEAN*M_LLIM_DECK_COV
+        # loc=mean-np.sqrt(6)*stdv/np.pi*np.euler_gamma,
+        # scale=np.sqrt(6)*stdv/np.pi
         SL = stats.gumbel_r(loc=loc,scale=scale)
         rvs = [R, SL]
         corr = np.eye(2)
