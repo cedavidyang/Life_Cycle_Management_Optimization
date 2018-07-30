@@ -7,21 +7,26 @@ import sys
 #plt.rc('text', usetex=True)
 import matplotlib as mpl
 #mpl.use("pgf")
-pgf_with_custom_preamble = {
-    "figure.figsize": [3.54, 2.655],
-    #"figure.subplot.bottom": 0.14,
-    #"figure.subplot.top": 0.93,
-    "font.family": "serif", # use serif/main font for text elements
-    "font.size": 9, # use font size
-    "text.usetex": True,    # use inline math for ticks
-    #'text.latex.unicode': True,
-    #"pgf.rcfonts": False,   # don't setup fonts from rc parameters
-    #"pgf.preamble": [
-        #r'\usepackage{fontspec}',         # load additional packages
-        #]
-}
-mpl.rcParams.update(pgf_with_custom_preamble)
+# pgf_with_custom_preamble = {
+    # "figure.figsize": [3.54, 2.655],
+    # #"figure.subplot.bottom": 0.14,
+    # #"figure.subplot.top": 0.93,
+    # "font.family": "serif", # use serif/main font for text elements
+    # "font.size": 9, # use font size
+    # "text.usetex": True,    # use inline math for ticks
+    # #'text.latex.unicode': True,
+    # #"pgf.rcfonts": False,   # don't setup fonts from rc parameters
+    # #"pgf.preamble": [
+        # #r'\usepackage{fontspec}',         # load additional packages
+        # #]
+# }
+# mpl.rcParams.update(pgf_with_custom_preamble)
 import matplotlib.pyplot as plt
+mpl.style.use('classic')
+mpl.rcParams['svg.fonttype'] = 'none'
+mpl.rcParams['font.size'] = 9
+mpl.rcParams['figure.figsize'] = [3.54, 2.655]
+mpl.rcParams['figure.autolayout'] = True
 from mpldatacursor import datacursor
 annotate_text = u'{label}'
 
@@ -496,12 +501,13 @@ def pointintimehistory(icorr_mean_list, str_yr_2dlist):
         plt.figure()
         plt.semilogy(time_array, pf_flex, 'b', ls='--', label='Flexure')
         plt.semilogy(time_array, pf_shear, 'r', ls='-.', label='Shear')
-        plt.semilogy(time_array, pf_deck, 'g', ls='-', label='Deck')
-        plt.semilogy(time_array, pf_sys, 'ko', ls='-', label='System')
+        plt.semilogy(time_array, pf_deck, 'g', ls='-', label='Deck & System')
+        plt.semilogy(time_array, pf_sys, 'ko', ls='-', label='Deck & System')
 
     else:
         plt.ion()
         plt.figure()
+        # plt.tight_layout()
         # multiple strengthening options, only system pfs are plotted
         ls_list = ['-', '--', '-.', ':', '  ', ' ']
         for str_yr_list,ls in zip(str_yr_2dlist, ls_list):
