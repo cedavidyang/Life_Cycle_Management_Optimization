@@ -13,7 +13,7 @@ from management.performanceFuncs import pointintimeHistory
 
 str_yr = [0, 0, 0]
 icorr_mean_list=[1,1,1]
-nprocess = 2
+nprocess = 40
 
 def getPf(param_list):
     pf_list = pointintimeHistory(*param_list)

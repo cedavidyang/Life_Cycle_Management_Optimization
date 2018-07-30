@@ -210,6 +210,7 @@ class Component(object):
         loc = slrv.ppf(1-1./nannual)
         scale = 1./ (nannual*slrv.pdf(loc))
         SL = stats.gumbel_r(loc=loc,scale=scale)
+        mean = SL.mean()
         rvs = [R, SL]
         corr = np.eye(2)
         probdata = ProbData(names=['R','SL'], rvs=rvs, corr=corr, startpoint=[rmean, mean], nataf=False)
