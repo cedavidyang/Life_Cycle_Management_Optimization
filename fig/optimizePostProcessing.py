@@ -225,22 +225,51 @@ def compare_indicator(icorr_mean_list, op='NSGA'):
 
     from mpl_toolkits.mplot3d import Axes3D
     plt.ion()
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6,6.*0.75))
     ax = fig.add_subplot(111, projection='3d')
-    for front,c,m,lb in zip(fronts, ['r','b'], ['^','o'], ['Point-in-time', 'Cumulative-time']):
-        ax.scatter(front[:,0], front[:,1], front[:,2], c=c, marker=m, label=lb)
-    ax.set_xlim([-1,60])
-    ax.set_ylim([-1,60])
-    ax.set_zlim([-1,40])
-    ax.set_xlabel('Flexure')
-    ax.set_ylabel('Shear')
-    ax.set_zlabel('Deck',rotation=90)
-    ax.xaxis._axinfo['label']['space_factor'] = 2.8
-    ax.yaxis._axinfo['label']['space_factor'] = 2.8
-    ax.zaxis._axinfo['label']['space_factor'] = 2.8
-    datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
-            bbox=None, fontsize=9,
-            arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
+    # fig, ax = plt.subplots(figsize=(6,6.*0.75), projection='3d')
+
+    front0 = fronts[0]
+    front1 = fronts[1]
+    intv0 = np.vstack((front0[:,1]-front0[:,0], front0[:,2]-front0[:,1],
+        front0[:,2]-front0[:,0])).T
+    intv0[intv0==0] = 999
+    intv0 = np.min(intv0,axis=1)
+    intv1 = np.vstack((front1[:,1]-front1[:,0], front1[:,2]-front1[:,1],
+        front1[:,2]-front1[:,0])).T
+    intv1[intv1==0] = 999
+    intv1 = np.min(intv1,axis=1)
+
+    imin=5
+    for front,c,m,lb,intv in zip(fronts, ['r','b'], ['^','o'],
+            ['Point-in-time', 'Cumulative-time'], [intv0, intv1]):
+        ax.scatter(front[intv>imin,0], front[intv>imin,1], front[intv>imin,2], c=c, marker=m, label=lb)
+    # ax.set_xlim([-1,60])
+    # ax.set_ylim([-1,60])
+    # ax.set_zlim([-1,40])
+    # ax.set_xlabel('Flexure')
+    # ax.set_ylabel('Shear')
+    # ax.set_zlabel('Deck',rotation=90)
+    # ax.xaxis._axinfo['label']['space_factor'] = 2.8
+    # ax.yaxis._axinfo['label']['space_factor'] = 2.8
+    # ax.zaxis._axinfo['label']['space_factor'] = 2.8
+    # datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
+            # bbox=None, fontsize=9,
+            # arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111)
+    fig3 = plt.figure()
+    ax3 = fig3.add_subplot(111)
+    for front,c,m,lb,intv in zip(fronts, ['r','b'], ['^','o'],
+            ['Point-in-time', 'Cumulative-time'], [intv0, intv1]):
+        ax1.scatter(front[intv>imin,0], front[intv>imin,1], c=c, marker=m, label=lb)
+        ax2.scatter(front[intv>imin,0], front[intv>imin,2], c=c, marker=m, label=lb)
+        ax3.scatter(front[intv>imin,1], front[intv>imin,2], c=c, marker=m, label=lb)
+    ax1.set_xlabel('Flexure'); ax1.set_ylabel('Shear')
+    ax2.set_xlabel('Flexure'); ax2.set_ylabel('Deck')
+    ax3.set_xlabel('Shear');   ax3.set_ylabel('Deck')
 
 
 def compare_optimization(icorr_mean_list,indicator=None):
