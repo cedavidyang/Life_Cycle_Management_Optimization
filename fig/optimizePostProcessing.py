@@ -243,7 +243,7 @@ def compare_indicator(icorr_mean_list, op='NSGA'):
             arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
 
 
-def compare_optmization(icorr_mean_list,indicator=None):
+def compare_optimization(icorr_mean_list,indicator=None):
     suffix = rate2suffix(icorr_mean_list)
     if indicator is None or indicator.lower() == 'cumulative':
         filename1 = 'popdata_'+suffix+'_NSGA.npz'
