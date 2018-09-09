@@ -30,6 +30,10 @@ mpl.rcParams['figure.autolayout'] = True
 from mpldatacursor import datacursor
 annotate_text = u'{label}'
 
+FLEXMIN = 21
+SHEARMIN = 12
+DECKMIN = 6
+
 def rate2suffix(icorr_mean_list):
     suffix = ''
     for icorr in icorr_mean_list:
@@ -42,6 +46,16 @@ def rate2suffix(icorr_mean_list):
             sys.exit(1)
     return suffix
 
+def is_pareto_efficient(costs):
+    """
+    :param costs: An (n_points, n_costs) array
+    :return: A (n_points, ) boolean array, indicating whether each point is Pareto efficient
+    """
+    is_efficient = np.ones(costs.shape[0], dtype = bool)
+    for i, c in enumerate(costs):
+        if is_efficient[i]:
+            is_efficient[is_efficient] = np.any(costs[is_efficient]<=c, axis=1)  # Remove dominated points
+    return is_efficient
 
 def front_deprecated(icorr_mean_list):
     suffix = rate2suffix(icorr_mean_list)
@@ -89,7 +103,7 @@ def front_deprecated(icorr_mean_list):
             #markeredgecolor='lightgrey', alpha=0.8)
     #plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
 
-def front(icorr_mean_list):
+def front_dep2(icorr_mean_list, imin=5):
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')
@@ -114,6 +128,20 @@ def front(icorr_mean_list):
         frontfits = popdata['frontfits']
         pop = popdata['pop']
         popfits = popdata['popfits']
+
+    intv2 = np.vstack((front2[:,1]-front2[:,0], front2[:,2]-front2[:,1],
+        front2[:,2]-front2[:,0])).T
+    intv2[intv2==0] = 999
+    intv2 = np.min(intv2,axis=1)
+
+    intvall = np.vstack((allpop[:,1]-allpop[:,0], allpop[:,2]-allpop[:,1],
+        allpop[:,2]-allpop[:,0])).T
+    intvall[intvall==0] = 999
+    intvall = np.min(intvall,axis=1)
+
+    front2 = front2[intv2>=imin]
+    frontfits2 = frontfits2[intv2>=imin]
+    allfits = allfits[intvall>=imin]
 
     plt.ion()
     plt.figure()
@@ -192,7 +220,80 @@ def front(icorr_mean_list):
                 plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
                         label='Solution F')
 
-def compare_indicator(icorr_mean_list, op='NSGA'):
+
+def front(icorr_mean_list, imin=5):
+    suffix = rate2suffix(icorr_mean_list)
+    # load data
+    datapath = os.path.join(os.path.abspath('./'), 'data')
+    filename = 'popdata_'+suffix+'_MOPSO2.npz'
+    datafile = os.path.join(datapath,filename)
+    if os.path.isfile(datafile) is False:
+        print 'no data available, execute Dependent_Optimization_MOPSO2.py with \
+                icorr_mean_list={} fist'.format(icorr_mean_list)
+        sys.exit(1)
+    else:
+        popdata = np.load(datafile)
+        allpop = popdata['allpop']
+        allfits = popdata['allfits']
+        front = popdata['front']
+        frontfits = popdata['frontfits']
+        popfits = popdata['popfits']
+
+    intv1 = np.vstack((front[:,1]-front[:,0], front[:,2]-front[:,1],
+        front[:,2]-front[:,0])).T
+    intv1[intv1==0] = 999
+    intv1 = np.min(abs(intv1),axis=1)
+
+    intvall = np.vstack((allpop[:,1]-allpop[:,0], allpop[:,2]-allpop[:,1],
+        allpop[:,2]-allpop[:,0])).T
+    intvall[intvall==0] = 999
+    intvall = np.min(abs(intvall),axis=1)
+
+    front = front[intv1>=imin]
+    frontfits = frontfits[intv1>=imin]
+    allfits = allfits[intvall>=imin]
+
+    # plt.ion()
+    # fig = plt.figure(figsize=(8, 6))
+    # ax = fig.add_subplot(111)
+    # for ind, popfit in zip(front, frontfits):
+        # plt.semilogx(popfit[0], popfit[1], 'b.',markeredgecolor='b',
+                # label=u'({},{},{})'.format(ind[0], ind[1], ind[2]))
+    # datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
+            # bbox=None, fontsize=9,
+            # arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
+    # pause = raw_input('press any key after annotation...')
+
+    plt.ion()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(-3,3))
+
+    plt.xlabel(u'Cumulative-time failure probability')
+    plt.ylabel(u'Volume of FRP (mm3)')
+
+
+    plt.semilogx(np.array(allfits)[:2000,0], np.array(allfits)[:2000,1], 'o', markerfacecolor='lightgrey',
+            markeredgecolor='lightgrey')
+    plt.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], 'bo', markeredgecolor='b')
+    plt.ylim(0, np.ceil(np.max(frontfits)*1.1/1e6)*1e6)
+    # indx = is_pareto_efficient(np.array(allfits))
+    # plt.semilogx(np.array(allfits)[indx,0], np.array(allfits)[indx,1], 'r^', markeredgecolor='b')
+
+
+    for ind, popfit in zip(front, frontfits):
+        if ind.tolist() == [0,0,9]:
+            plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
+                    label='Solution A')
+        elif ind.tolist() == [0,0,24]:
+            plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
+                    label='Solution B')
+        elif ind.tolist() == [0,26,34]:
+            plt.semilogx(popfit[0], popfit[1], 'y*',markeredgecolor='k', markersize=14,
+                    label='Solution C')
+
+def compare_indicator(icorr_mean_list, op='NSGA', imin=5):
     suffix = rate2suffix(icorr_mean_list)
     filename1 = 'popdata_'+suffix+'_beta_'+op+'.npz'
     filename2 = 'popdata_'+suffix+'_'+op+'.npz'
@@ -211,6 +312,32 @@ def compare_indicator(icorr_mean_list, op='NSGA'):
             front = popdata['front']
             fronts.append(front)
 
+    from mpl_toolkits.mplot3d import Axes3D
+    plt.ion()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    front1 = fronts[0]
+    front2 = fronts[1]
+
+    intv1 = np.vstack((front1[:,1]-front1[:,0], front1[:,2]-front1[:,1],
+        front1[:,2]-front1[:,0])).T
+    intv1[intv1==0] = 999
+    intv1 = np.min(abs(intv1),axis=1)
+
+    intv2 = np.vstack((front2[:,1]-front2[:,0], front2[:,2]-front2[:,1],
+        front2[:,2]-front2[:,0])).T
+    intv2[intv2==0] = 999
+    intv2 = np.min(abs(intv2),axis=1)
+
+    indx1 = (intv1>=imin) & ((front1[:,0]==0) | (front1[:,0]>=FLEXMIN)) &\
+            ((front1[:,1]==0) | (front1[:,1]>=SHEARMIN)) &\
+            ((front1[:,2]==0) | (front1[:,2]>=DECKMIN))
+    indx2 = (intv2>=imin) & ((front2[:,0]==0) | (front2[:,0]>=FLEXMIN)) &\
+            ((front2[:,1]==0) | (front2[:,1]>=SHEARMIN)) &\
+            ((front2[:,2]==0) | (front2[:,2]>=DECKMIN))
+    fronts = [front1[indx1], front2[indx2]]
+
     distance=[]
     if len(fronts[0])>len(fronts[1]):
         front1 = fronts[1]
@@ -223,56 +350,48 @@ def compare_indicator(icorr_mean_list, op='NSGA'):
         distance.append(min(np.linalg.norm(vec, axis=1)))
     print 'distance in the parameter space: {}'.format(np.mean(distance))
 
-    from mpl_toolkits.mplot3d import Axes3D
-    plt.ion()
-    fig = plt.figure(figsize=(6,6.*0.75))
-    ax = fig.add_subplot(111, projection='3d')
-    # fig, ax = plt.subplots(figsize=(6,6.*0.75), projection='3d')
+    fronts = [fronts[1], fronts[0]]
+    for front,c,m,lb in zip(fronts, ['b', 'r'], ['o','^'],
+            ['Cumulative-time', 'Point-in-time']):
+        indx = front[:,0]==0
+        if lb.lower() == 'cumulative-time':
+            ax.scatter(front[:,0], front[:,1], front[:,2], c=c, marker=m, label=lb)
+        if lb.lower() == 'point-in-time':
+            ax.scatter(front[indx,0], front[indx,1], front[indx,2],
+                    c='r', marker='^', label=lb)
+            ax.scatter(front[~indx,0], front[~indx,1], front[~indx,2],
+                    c='g', marker='v', label=lb)
 
-    front0 = fronts[0]
-    front1 = fronts[1]
-    intv0 = np.vstack((front0[:,1]-front0[:,0], front0[:,2]-front0[:,1],
-        front0[:,2]-front0[:,0])).T
-    intv0[intv0==0] = 999
-    intv0 = np.min(intv0,axis=1)
-    intv1 = np.vstack((front1[:,1]-front1[:,0], front1[:,2]-front1[:,1],
-        front1[:,2]-front1[:,0])).T
-    intv1[intv1==0] = 999
-    intv1 = np.min(intv1,axis=1)
+    ax.set_xlim(-1)
+    ax.set_ylim(-1)
+    ax.set_zlim(-1)
 
-    imin=5
-    for front,c,m,lb,intv in zip(fronts, ['r','b'], ['^','o'],
-            ['Point-in-time', 'Cumulative-time'], [intv0, intv1]):
-        ax.scatter(front[intv>imin,0], front[intv>imin,1], front[intv>imin,2], c=c, marker=m, label=lb)
-    # ax.set_xlim([-1,60])
-    # ax.set_ylim([-1,60])
-    # ax.set_zlim([-1,40])
-    # ax.set_xlabel('Flexure')
-    # ax.set_ylabel('Shear')
-    # ax.set_zlabel('Deck',rotation=90)
-    # ax.xaxis._axinfo['label']['space_factor'] = 2.8
-    # ax.yaxis._axinfo['label']['space_factor'] = 2.8
-    # ax.zaxis._axinfo['label']['space_factor'] = 2.8
-    # datacursor(formatter=annotate_text.format,display='multiple', draggable=True,
-            # bbox=None, fontsize=9,
-            # arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
     fig1 = plt.figure()
     ax1 = fig1.add_subplot(111)
     fig2 = plt.figure()
     ax2 = fig2.add_subplot(111)
-    fig3 = plt.figure()
-    ax3 = fig3.add_subplot(111)
-    for front,c,m,lb,intv in zip(fronts, ['r','b'], ['^','o'],
-            ['Point-in-time', 'Cumulative-time'], [intv0, intv1]):
-        ax1.scatter(front[intv>imin,0], front[intv>imin,1], c=c, marker=m, label=lb)
-        ax2.scatter(front[intv>imin,0], front[intv>imin,2], c=c, marker=m, label=lb)
-        ax3.scatter(front[intv>imin,1], front[intv>imin,2], c=c, marker=m, label=lb)
-    ax1.set_xlabel('Flexure'); ax1.set_ylabel('Shear')
-    ax2.set_xlabel('Flexure'); ax2.set_ylabel('Deck')
-    ax3.set_xlabel('Shear');   ax3.set_ylabel('Deck')
+    for front,cm,lb in zip(fronts, ['bo', 'r^'],
+            ['Cumulative-time', 'Point-in-time']):
+        indx = front[:,0]==0
+        if lb.lower() == 'cumulative-time':
+            ax1.plot(front[indx,1], front[indx,2], cm, label=lb)
+            ax2.plot(front[indx,1], front[indx,2], cm, label=lb)
+        if lb.lower() == 'point-in-time':
+            ax1.plot(front[indx,1], front[indx,2], cm, label=lb)
+            ax2.plot(front[~indx,1], front[~indx,2], 'gv')
+    ax1.set_xlabel('Shear')
+    ax1.set_ylabel('Deck')
+    ax1.set_xlim(-4)
+    ax1.set_ylim(-4)
+    ax1.legend()
+    ax2.set_xlabel('Shear')
+    ax2.set_ylabel('Deck')
+    ax2.set_xlim(-4)
+    ax2.set_ylim(-4)
+    ax2.legend()
 
 
-def compare_optimization(icorr_mean_list,indicator=None):
+def compare_optimization(icorr_mean_list,indicator=None, imin=5):
     suffix = rate2suffix(icorr_mean_list)
     if indicator is None or indicator.lower() == 'cumulative':
         filename1 = 'popdata_'+suffix+'_NSGA.npz'
@@ -298,23 +417,45 @@ def compare_optimization(icorr_mean_list,indicator=None):
             fronts.append(front)
             frontfits_list.append(frontfits)
 
+    front1 = fronts[0]
+    front2 = fronts[1]
+
+    intv1 = np.vstack((front1[:,1]-front1[:,0], front1[:,2]-front1[:,1],
+        front1[:,2]-front1[:,0])).T
+    intv1[intv1==0] = 999
+    intv1 = np.min(abs(intv1),axis=1)
+
+    intv2 = np.vstack((front2[:,1]-front2[:,0], front2[:,2]-front2[:,1],
+        front2[:,2]-front2[:,0])).T
+    intv2[intv2==0] = 999
+    intv2 = np.min(abs(intv2),axis=1)
+
+    indx1 = (intv1>=imin) & ((front1[:,0]==0) | (front1[:,0]>=FLEXMIN)) &\
+            ((front1[:,1]==0) | (front1[:,1]>=SHEARMIN)) &\
+            ((front1[:,2]==0) | (front1[:,2]>=DECKMIN))
+    indx2 = (intv2>=imin) & ((front2[:,0]==0) | (front2[:,0]>=FLEXMIN)) &\
+            ((front2[:,1]==0) | (front2[:,1]>=SHEARMIN)) &\
+            ((front2[:,2]==0) | (front2[:,2]>=DECKMIN))
+    fronts = [front1[indx1], front2[indx2]]
+    frontfits_list = [frontfits_list[0][indx1], frontfits_list[1][indx2]]
+
     distance=[]
     fitdistance=[]
-    frontfit1 = frontfits_list[0]
-    frontfit2 = frontfits_list[1]
+    frontfita = frontfits_list[0]
+    frontfitb = frontfits_list[1]
     if len(fronts[0])>len(fronts[1]):
-        frontfit1 = frontfits_list[1]
-        frontfit2 = frontfits_list[0]
-        front1 = fronts[1]
-        front2 = fronts[0]
+        frontfita = frontfits_list[1]
+        frontfitb = frontfits_list[0]
+        fronta = fronts[1]
+        frontb = fronts[0]
     else:
-        frontfit1 = frontfits_list[0]
-        frontfit2 = frontfits_list[1]
-        front1 = fronts[0]
-        front2 = fronts[1]
-    for sol,solfit in zip(front1,frontfit1):
-        vec = np.array(front2)-np.array(sol)
-        fitvec = np.array(frontfit2)-np.array(solfit)
+        frontfita = frontfits_list[0]
+        frontfitb = frontfits_list[1]
+        fronta = fronts[0]
+        frontb = fronts[1]
+    for sol,solfit in zip(fronta,frontfita):
+        vec = np.array(frontb)-np.array(sol)
+        fitvec = np.array(frontfitb)-np.array(solfit)
         distance.append(min(np.linalg.norm(vec, axis=1)))
         fitdistance.append(min(np.linalg.norm(fitvec, axis=1)))
     print 'distance in the parameter space: {}'.format(np.mean(distance))
@@ -328,14 +469,13 @@ def compare_optimization(icorr_mean_list,indicator=None):
     ax2 = fig2.add_subplot(111, projection='3d')
     ax1.ticklabel_format(axis='y', style='sci', scilimits=(-3,3))
     ax1.set_xlabel(u'Failure probability')
-    ax1.set_ylabel(u'Strengthening cost (mm\\textsuperscript{3})')
+    ax1.set_ylabel(u'Strengthening cost (mm3)')
     ax2.set_xlabel(u'Flexure'); #ax2.set_xlim([-1,100])
     ax2.set_ylabel(u'Shear'); #ax2.set_ylim([-1,100])
     ax2.set_zlabel(u'Deck'); #ax2.set_zlim([-1,100])
     for front, frontfits,c,m,lb in zip(fronts, frontfits_list, ['b','r'], ['o','^'], ['NSGA-II', 'MOPSO-II']):
         ax1.semilogx(np.array(frontfits)[:,0], np.array(frontfits)[:,1], c=c, marker=m, ls='None',label=lb)
         ax2.scatter(front[:,0], front[:,1], front[:,2], c=c, marker=m,label=lb)
-
 
 
 def costkeeping(icorr_mean_list):
@@ -486,10 +626,8 @@ def history(icorr_mean_list, str_yr_2dlist):
                     label='Solution A'
                 elif str_yr_list == [0,0,24]:
                     label='Solution B'
-                elif str_yr_list == [0,26,29]:
+                elif str_yr_list == [0,26,34]:
                     label='Solution C'
-                elif str_yr_list == [51,32,29]:
-                    label='Solution D'
                 plt.semilogy(time_array, pf_sys, ls=ls, label=label)
     plt.xlabel('Time (year)')
     plt.ylabel('Cumulative-time failure probability')
@@ -627,3 +765,36 @@ def lifetimefitting(icorr_mean_list, str_yr_list=[0., 0., 0.]):
     datacursor(formatter='{label}'.format,display='multiple', draggable=True,
             bbox=None, fontsize=9,
             arrowprops=dict(arrowstyle='-|>', connectionstyle='arc3', facecolor='k'))
+
+def lhs_converge():
+    rsmpf = np.load('./data/rc_rsmpf_lhs.npz')['rsmp']
+    rsmps = np.load('./data/rc_rsmps_lhs2.npz')['rsmp']
+    rsmpd = np.load('./data/rc_rsmpd_lhs3.npz')['rsmp']
+
+    plt.ion()
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111)
+    fig3 = plt.figure()
+    ax3 = fig3.add_subplot(111)
+
+    nsmp = np.size(rsmpf)
+    ismp = np.arange(1, nsmp+1)
+    cumMeanf = np.cumsum(rsmpf)/ismp
+    cumMeanf2 = np.cumsum(rsmpf**2)/ismp
+    errorMeanf = np.sqrt(cumMeanf2 - cumMeanf**2)
+
+    ax1.plot(ismp, cumMeanf)
+    # ax1.plot(ismp, cumMeanf+errorMeanf)
+    # ax1.plot(ismp, cumMeanf-errorMeanf)
+
+    ax2.plot(ismp, np.cumsum(rsmps)/ismp)
+    ax3.plot(ismp, np.cumsum(rsmpd)/ismp)
+
+    ax1.set_xlabel('Number of samples')
+    ax1.set_ylabel('Flexural strength of girder (kN-m)')
+    ax2.set_xlabel('Number of samples')
+    ax2.set_ylabel('Shear strength of girder (kN)')
+    ax3.set_xlabel('Number of samples')
+    ax3.set_ylabel('Flexural strength of deck (kN-m/m)')
