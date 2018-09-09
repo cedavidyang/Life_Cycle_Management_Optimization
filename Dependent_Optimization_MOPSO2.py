@@ -17,7 +17,6 @@ from constants import END_AGE, RELIABILITY_DT, SERVICE_LIFE, FRP_DESIGN_YR
 from constants.simpleCorrosionConstants import START_AGE, TIME_INTERVAL, END_AGE
 from management.performanceFuncs import performanceFunc, evalFitness
 from management.component import Component
-from fig.optimizePostProcessing import rate2suffix
 
 from deap import algorithms
 from deap import base
@@ -38,16 +37,16 @@ NREP = 500
 NDIV = 50
 NPOP = 500
 # stop criteria
-NGEN = 10
+NGEN = 30
 NMAX = 100
-TOL1 = 0.001
-TOL2 = 0.001
+TOL1 = 0.0001
+TOL2 = 0.0001
 NCR = 10
 
 #icorr_mean_list = np.array(input('corrosoin rate:')).astype('double')
 #year = np.array(input('expected life:')).astype('double')
 #num_processes = np.array(input('number of processes:')).astype('int')
-icorr_mean_list = [1.,1.,0.5]
+icorr_mean_list = [1.,1.,1.]
 year = 100
 num_processes = 40
 
@@ -56,6 +55,18 @@ creator.create("Particle", list, fitness=creator.FitnessMulti, speed=list,
         pmin=None, pmax=None, smin=None, smax=None, geoinfo=None,
         best=None)
 creator.create("Swarm", list, gbest=None, gbestfit=list)
+
+def rate2suffix(icorr_mean_list):
+    suffix = ''
+    for icorr in icorr_mean_list:
+        if icorr == 0.5:
+            suffix += 'a'
+        elif icorr == 1.0:
+            suffix += 'b'
+        else:
+            print 'illegal corrosion rate'
+            sys.exit(1)
+    return suffix
 
 def init_particle(pcls, size, pmin, pmax, smin, smax, geoinfo):
     part = pcls(random.randint(pmin, pmax) for _ in xrange(size))
@@ -67,6 +78,24 @@ def init_particle(pcls, size, pmin, pmax, smin, smax, geoinfo):
     part.smax = smax
     part.geoinfo = geoinfo
     return part
+
+def init_swarm(pcls, nparam, npop, pmin, pmax, smin, smax, geoinfo):
+    betaswarm = np.load('./data/popdata_bbb_beta_MOPSO2.npz')['front']
+    i = 0
+    swarm = []
+    for pcl in itertools.cycle(list(betaswarm)):
+        part = pcls(pcl)
+        spacing = pmax-pmin
+        part.speed = [random.uniform(smin*spacing, smax*spacing) for _ in xrange(nparam)]
+        part.pmin = pmin
+        part.pmax = pmax
+        part.smin = smin
+        part.smax = smax
+        part.geoinfo = geoinfo
+        swarm.append(part)
+        i += 1
+        if i>=npop: break
+    return swarm
 
 def update_particle(part, best, w, phi1, phi2):
     tmpu1 = random.uniform(0,phi1)
@@ -141,9 +170,17 @@ def unique_rows(A, return_index, return_inverse):
         return B.view(A.dtype).reshape((-1, A.shape[1]), order='C')
 
 toolbox = base.Toolbox()
-toolbox.register("particle", init_particle, creator.Particle, size=NPARAM, pmin=PMIN, pmax=PMAX,
-        smin=SMIN, smax=SMAX, geoinfo=None)
-toolbox.register("swarm", tools.initRepeat, creator.Swarm, toolbox.particle)
+
+## use randomly generated pcls
+# toolbox.register("particle", init_particle, creator.Particle, size=NPARAM, pmin=PMIN, pmax=PMAX,
+        # smin=SMIN, smax=SMAX, geoinfo=None)
+# toolbox.register("swarm", tools.initRepeat, creator.Swarm, toolbox.particle)
+
+# use best pcls in point-in-time opt
+toolbox.register("init_swarm", init_swarm, creator.Particle, nparam=NPARAM, npop=NPOP,
+        pmin=PMIN, pmax=PMAX, smin=SMIN, smax=SMAX, geoinfo=None)
+toolbox.register("swarm", tools.initIterate, creator.Swarm, toolbox.init_swarm)
+
 toolbox.register("update", update_particle, phi1=PCONF, phi2=SCONF)
 toolbox.register("evaluate", performanceFunc, icorr_mean_list=icorr_mean_list, year=year)
 toolbox.register("sort", tools.sortNondominated)
@@ -153,10 +190,10 @@ toolbox.register("unique_rows", unique_rows, return_index=False, return_inverse=
 
 
 def main():
-    ## reset bookkeeping
-    #Component.resetCostKeeping()
-    #Component.resetPfKeeping()
-    #Component.resetRiskKeeping()
+    # reset bookkeeping
+    Component.resetCostKeeping()
+    Component.resetPfKeeping()
+    Component.resetRiskKeeping()
 
     # use existing pf data
     suffix = rate2suffix(icorr_mean_list)
@@ -175,17 +212,19 @@ def main():
     Component.costkeeping['shear'] = costkeeping['shear']
     Component.costkeeping['deck'] = costkeeping['deck']
 
-    #manager = Manager()
-    #Component.pfkeeping = manager.dict(Component.pfkeeping)
-    #Component.costkeeping = manager.dict(Component.costkeeping)
-    #Component.riskkeeping = manager.dict(Component.riskkeeping)
-    #pool = Pool(processes=num_processes)
-    #toolbox.register("map", pool.map)
+    ## series version
+    # Component.pfkeeping = dict(Component.pfkeeping)
+    # Component.costkeeping = dict(Component.costkeeping)
+    # Component.riskkeeping = dict(Component.riskkeeping)
+    # toolbox.register("map", map)
 
-    Component.pfkeeping = dict(Component.pfkeeping)
-    Component.costkeeping = dict(Component.costkeeping)
-    Component.riskkeeping = dict(Component.riskkeeping)
-    toolbox.register("map", map)
+    manager = Manager()
+    Component.pfkeeping = manager.dict(Component.pfkeeping)
+    Component.costkeeping = manager.dict(Component.costkeeping)
+    Component.riskkeeping = manager.dict(Component.riskkeeping)
+    pool = Pool(processes=num_processes)
+    toolbox.register("map", pool.map)
+
 
     print "MULTIOBJECTIVE OPTIMIZATION: parallel version"
     start_delta_time = time.time()
@@ -198,7 +237,8 @@ def main():
 
     allpop = []
     # initialization: first generation
-    swarm = toolbox.swarm(n=NPOP)
+    # swarm = toolbox.swarm(n=NPOP)     # use random generated swarm
+    swarm = toolbox.swarm()             # use best pcls in point-in-time opt
     allpop += swarm
     fitnessvalues = toolbox.map(toolbox.evaluate,swarm)
     for i,part in enumerate(swarm):
@@ -344,17 +384,6 @@ if __name__ == "__main__":
     cost_deck = cost_deck[:,indx]
 
     # save data
-    def rate2suffix(icorr_mean_list):
-        suffix = ''
-        for icorr in icorr_mean_list:
-            if icorr == 0.5:
-                suffix += 'a'
-            elif icorr == 1.0:
-                suffix += 'b'
-            else:
-                print 'illegal corrosion rate'
-                sys.exit(1)
-        return suffix
     suffix = rate2suffix(icorr_mean_list)
     # load data
     datapath = os.path.join(os.path.abspath('./'), 'data')

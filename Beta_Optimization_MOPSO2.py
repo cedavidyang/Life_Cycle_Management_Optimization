@@ -36,10 +36,10 @@ NREP = 500
 NDIV = 50
 NPOP = 500
 # stop criteria
-NGEN = 10
+NGEN = 30
 NMAX = 100
-TOL1 = 0.001
-TOL2 = 0.001
+TOL1 = 0.0001
+TOL2 = 0.0001
 NCR = 10
 
 #icorr_mean_list = np.array(input('corrosoin rate:')).astype('double')

@@ -163,7 +163,7 @@ def simpleCorrosionLHS(component_type, service_time, icorr_mean, str_yr=None,
                 design_frp = lambda tfrp: designFlexStrength(frpBeamDesign,
                     tfrp) - initial_design_capacity
                 tfrp, infodict, ier, mesg = fsolve(design_frp, 0.11, full_output=True)
-                if tfrp[0]<0:
+                if tfrp[0]<TFRP_NEGLECT:
                     tfrp = 0.0
                 elif tfrp[0]>MAX_LAYER * 0.166:
                     tfrp = MAX_LAYER * 0.166
@@ -199,7 +199,7 @@ def simpleCorrosionLHS(component_type, service_time, icorr_mean, str_yr=None,
                 design_frp = lambda tfrpv: designShearStrength(frpBeamDesign,
                     tfrpv) - initial_design_capacity
                 tfrpv, infodict, ier, mesg = fsolve(design_frp, 0.001, full_output=True)
-                if tfrpv[0]<0:
+                if tfrpv[0]<TFRP_NEGLECT:
                     tfrpv = 0.0
                 elif tfrpv[0]>MAX_LAYER * 0.166:
                     tfrpv = MAX_LAYER * 0.166
@@ -238,7 +238,7 @@ def simpleCorrosionLHS(component_type, service_time, icorr_mean, str_yr=None,
                 design_frp = lambda tfrp: designFlexStrength(frpBeamDesign,
                     tfrp) - initial_design_capacity
                 tfrp, infodict, ier, mesg = fsolve(design_frp, 0.11, full_output=True)
-                if tfrp[0]<0:
+                if tfrp[0]<TFRP_NEGLECT:
                     tfrp = 0.0
                 elif tfrp[0]>MAX_LAYER * 0.166:
                     tfrp = MAX_LAYER * 0.166
